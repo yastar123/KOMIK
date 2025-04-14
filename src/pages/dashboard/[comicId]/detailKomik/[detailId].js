@@ -505,6 +505,8 @@ export default function DetailKomik() {
                                                         e.target.onerror = null;
                                                         e.target.src = "https://via.placeholder.com/400x300?text=Error+Loading+Image";
                                                     }}
+                                                    width={400}
+                                                    height={300}
                                                 />
                                             </div>
                                         </div>
@@ -564,6 +566,8 @@ export default function DetailKomik() {
                                                         e.target.onerror = null;
                                                         e.target.src = "https://via.placeholder.com/400x300?text=Error+Loading+Image";
                                                     }}
+                                                    width={400}
+                                                    height={300}
                                                 />
                                             </div>
                                         </div>
@@ -628,6 +632,8 @@ export default function DetailKomik() {
                                                             e.target.onerror = null;
                                                             e.target.src = "https://via.placeholder.com/400x300?text=Error+Loading+Image";
                                                         }}
+                                                        width={400}
+                                                        height={300}
                                                     />
                                                 </div>
                                                     );

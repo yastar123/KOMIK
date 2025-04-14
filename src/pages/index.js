@@ -338,6 +338,8 @@ export default function Home() {
                       src={comic.imageUrl || "/api/placeholder/240/340"}
                       alt={comic.title}
                       className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-300"
+                      width={240}
+                      height={340}
                     />
 
                     {/* Origin Badge */}

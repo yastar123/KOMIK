@@ -626,6 +626,8 @@ export default function AdminDashboard() {
                                                 alt="Preview"
                                                 className="w-full h-full object-cover"
                                                 onError={() => setEditImageUrl("/placeholder-image.jpg")}
+                                                width={320}
+                                                height={160}
                                             />
                                         </div>
                                     </div>

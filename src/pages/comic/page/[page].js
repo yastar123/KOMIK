@@ -385,6 +385,8 @@ export default function ComicPaginationPage() {
                                                         e.target.onerror = null;
                                                         e.target.src = "/comic-placeholder.jpg";
                                                     }}
+                                                    width={250}
+                                                    height={333}
                                                 />
                                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
