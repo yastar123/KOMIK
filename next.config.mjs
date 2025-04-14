@@ -2,7 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: ["komikcast02.com"],
+    domains: ["komikcast02.com", "sv3.imgkc3.my.id"], // Menambahkan domain baru
   },
 };
 
