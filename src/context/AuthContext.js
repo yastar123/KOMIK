@@ -14,7 +14,8 @@ const AuthContext = createContext({});
 const ALLOWED_EMAILS = [
     // Tambahkan email yang diizinkan di sini
     'webcipta1@gmail.com',  // Email admin yang diizinkan
-    'edujpratama@gmail.com'  // Email yang baru ditambahkan
+    'edujpratama@gmail.com',
+    'yastariskandar@gmail.com',  // Email yang baru ditambahkan
 ];
 
 export const useAuth = () => useContext(AuthContext);
