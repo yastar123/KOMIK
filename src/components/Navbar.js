@@ -124,15 +124,15 @@ export default function Navbar() {
 
                     {/* Desktop Navigation */}
                     <nav className="hidden md:flex items-center space-x-8">
-                        <Link href="/" className="flex items-center gap-1 text-purple-400 hover:text-purple-300 transition-colors">
+                        <Link href="/" className="flex items-center gap-1 text-white hover:text-purple-300 transition-colors">
                             <Home size={18} className="mr-1" />
                             Home
                         </Link>
-                        <Link href="/explore" className="flex items-center gap-1 text-gray-300 hover:text-white transition-colors">
+                        <Link href="/genre" className="flex items-center gap-1 text-gray-300 hover:text-purple-300 transition-colors">
                             <Compass size={18} className="mr-1" />
                             Explore
                         </Link>
-                        <Link href="/library" className="flex items-center gap-1 text-gray-300 hover:text-white transition-colors">
+                        <Link href="/library" className="flex items-center gap-1 text-gray-300 hover:text-purple-300 transition-colors">
                             <Library size={18} className="mr-1" />
                             Library
                         </Link>
@@ -259,7 +259,7 @@ export default function Navbar() {
                                     <span>Home</span>
                                 </Link>
                                 <Link
-                                    href="/explore"
+                                    href="/genre"
                                     className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-800 text-gray-300"
                                     onClick={() => setIsOpen(false)}
                                 >

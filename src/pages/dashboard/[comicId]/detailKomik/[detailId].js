@@ -21,7 +21,7 @@ export default function DetailKomik() {
     const [newChapterUrl, setNewChapterUrl] = useState(""); // Keeping this for backward compatibility
     const [newChapterCover, setNewChapterCover] = useState("");
     const [newDescription, setNewDescription] = useState("");
-
+    
     // For bulk image URL input
     const [chapterImagesText, setChapterImagesText] = useState("");
     const [urlValidationStatus, setUrlValidationStatus] = useState({
@@ -30,7 +30,7 @@ export default function DetailKomik() {
     });
     const [isPreviewingNewImages, setIsPreviewingNewImages] = useState(false);
     const [parsedImageUrls, setParsedImageUrls] = useState([]);
-
+    
     // For editing existing chapters
     const [selectedChapter, setSelectedChapter] = useState(null);
     const [isEditingImages, setIsEditingImages] = useState(false);
@@ -126,20 +126,20 @@ export default function DetailKomik() {
         const urls = text.split('\n')
             .map(line => line.trim())
             .filter(line => line.length > 0);
-
+        
         if (urls.length === 0) {
             setter({
                 isValid: false,
                 message: "Harap masukkan minimal satu URL gambar"
             });
-            return false;           
+            return false;
         }
 
         // Check each URL
         const invalidUrls = urls
             .filter(url => !validateUrl(url))
             .map((url, idx) => `Baris ${idx + 1}: ${url}`);
-
+        
         if (invalidUrls.length > 0) {
             setter({
                 isValid: false,
@@ -158,7 +158,7 @@ export default function DetailKomik() {
     // Update the parseImagesFromText function
     const parseImagesFromText = (text) => {
         if (!text.trim()) return [];
-
+        
         return text
             .split('\n')
             .map((line, index) => {
@@ -200,7 +200,7 @@ export default function DetailKomik() {
 
         // Convert textarea content to array of image objects
         const imagesArray = parseImagesFromText(chapterImagesText);
-
+        
         if (imagesArray.length === 0) {
             setUrlValidationStatus({
                 isValid: false,
@@ -220,7 +220,7 @@ export default function DetailKomik() {
                 timestamp: Timestamp.now(),
                 images: imagesArray, // Store the array of image objects with order
             });
-
+            
             setNewChapterTitle("");
             setNewChapterUrl("");
             setNewChapterCover("");
@@ -231,9 +231,9 @@ export default function DetailKomik() {
                 isValid: true,
                 message: ""
             });
-
+            
             alert("Chapter berhasil ditambahkan!");
-
+            
             // Refresh chapter list
             const chaptersSnapshot = await getDocs(
                 collection(db, "comics", comicId, "detailKomik", detailId, "chapters")
@@ -250,10 +250,10 @@ export default function DetailKomik() {
         setSelectedChapter(chapter);
         setIsEditingImages(true);
         setIsPreviewingEditImages(false);
-
+        
         // Convert existing image array back to text format for editing
         let imagesText = "";
-
+        
         if (chapter.images && Array.isArray(chapter.images)) {
             // Sort by order if it exists
             const sortedImages = [...chapter.images].sort((a, b) => {
@@ -263,15 +263,15 @@ export default function DetailKomik() {
                 }
                 return 0;
             });
-
-            imagesText = sortedImages.map(img =>
+            
+            imagesText = sortedImages.map(img => 
                 typeof img === 'object' ? img.imageUrl : img
             ).join('\n');
         } else if (chapter.url) {
             // Fallback for old format
             imagesText = chapter.url;
         }
-
+        
         setEditingChapterImagesText(imagesText);
         setEditUrlValidationStatus({
             isValid: true,
@@ -287,7 +287,7 @@ export default function DetailKomik() {
 
         // Convert textarea content to array of image objects
         const imagesArray = parseImagesFromText(editingChapterImagesText);
-
+        
         if (imagesArray.length === 0) {
             setEditUrlValidationStatus({
                 isValid: false,
@@ -298,12 +298,12 @@ export default function DetailKomik() {
 
         try {
             const chapterRef = doc(
-                db,
-                "comics",
-                comicId,
-                "detailKomik",
-                detailId,
-                "chapters",
+                db, 
+                "comics", 
+                comicId, 
+                "detailKomik", 
+                detailId, 
+                "chapters", 
                 selectedChapter.id
             );
 
@@ -316,9 +316,9 @@ export default function DetailKomik() {
             setSelectedChapter(null);
             setIsPreviewingEditImages(false);
             setParsedEditImageUrls([]);
-
+            
             alert("Gambar chapter berhasil diperbarui!");
-
+            
             // Refresh chapter list
             const chaptersSnapshot = await getDocs(
                 collection(db, "comics", comicId, "detailKomik", detailId, "chapters")
@@ -334,7 +334,7 @@ export default function DetailKomik() {
         if (!confirm("Apakah Anda yakin ingin menghapus chapter ini?")) {
             return;
         }
-
+        
         try {
             await deleteDoc(doc(db, "comics", comicId, "detailKomik", detailId, "chapters", chapterId));
             alert("Chapter berhasil dihapus!");
@@ -353,10 +353,10 @@ export default function DetailKomik() {
     const previewChapterImages = (chapter) => {
         setSelectedChapter(chapter);
         setIsEditingImages(false);
-
+        
         // Process the images based on their format
         let imagesToDisplay = [];
-
+        
         if (chapter.images && Array.isArray(chapter.images)) {
             // Sort by order if available
             if (chapter.images[0] && typeof chapter.images[0] === 'object') {
@@ -370,7 +370,7 @@ export default function DetailKomik() {
             // Fallback for old format
             imagesToDisplay = [cleanImageUrl(chapter.url)];
         }
-
+        
         setEditingChapterImagesText(imagesToDisplay.join('\n'));
     };
 
@@ -388,27 +388,27 @@ export default function DetailKomik() {
     const handleImageUrlPaste = (e, setter, validationSetter) => {
         // Get pasted text
         const pasteData = e.clipboardData.getData('text');
-
+        
         // Check if it contains multiple lines (could be multiple URLs)
         if (pasteData.includes('\n')) {
             // Get the current textarea value and cursor position
             const currentValue = e.target.value;
             const cursorPos = e.target.selectionStart;
-
+            
             // Insert pasted text at cursor position
-            const newValue =
-                currentValue.substring(0, cursorPos) +
-                pasteData +
+            const newValue = 
+                currentValue.substring(0, cursorPos) + 
+                pasteData + 
                 currentValue.substring(e.target.selectionEnd);
-
+            
             // Update state
             setter(newValue);
-
+            
             // Validate all URLs
             setTimeout(() => {
                 validateAllUrls(newValue, validationSetter);
             }, 100);
-
+            
             e.preventDefault();
         }
     };
@@ -475,7 +475,7 @@ export default function DetailKomik() {
                         <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
                             <div className="sticky top-0 bg-white p-4 border-b flex justify-between items-center">
                                 <h3 className="text-xl font-bold">Preview Images Sebelum Upload</h3>
-                                <button
+                                <button 
                                     onClick={() => setIsPreviewingNewImages(false)}
                                     className="text-gray-500 hover:text-gray-800"
                                 >
@@ -496,8 +496,8 @@ export default function DetailKomik() {
                                                 <span className="text-xs text-gray-500 truncate max-w-xs">{img.imageUrl}</span>
                                             </div>
                                             <div className="relative pb-[56.25%] h-0">
-                                                <img
-                                                    src={img.imageUrl}
+                                                <img 
+                                                    src={img.imageUrl} 
                                                     alt={`Preview gambar ${img.order}`}
                                                     className="absolute h-full w-full object-contain"
                                                     onError={(e) => {
@@ -534,7 +534,7 @@ export default function DetailKomik() {
                         <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
                             <div className="sticky top-0 bg-white p-4 border-b flex justify-between items-center">
                                 <h3 className="text-xl font-bold">Preview Perubahan: {selectedChapter?.title}</h3>
-                                <button
+                                <button 
                                     onClick={() => setIsPreviewingEditImages(false)}
                                     className="text-gray-500 hover:text-gray-800"
                                 >
@@ -555,8 +555,8 @@ export default function DetailKomik() {
                                                 <span className="text-xs text-gray-500 truncate max-w-xs">{img.imageUrl}</span>
                                             </div>
                                             <div className="relative pb-[56.25%] h-0">
-                                                <img
-                                                    src={img.imageUrl}
+                                                <img 
+                                                    src={img.imageUrl} 
                                                     alt={`Preview gambar ${img.order}`}
                                                     className="absolute h-full w-full object-contain"
                                                     onError={(e) => {
@@ -593,7 +593,7 @@ export default function DetailKomik() {
                         <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
                             <div className="sticky top-0 bg-white p-4 border-b flex justify-between items-center">
                                 <h3 className="text-xl font-bold">Preview: {selectedChapter.title}</h3>
-                                <button
+                                <button 
                                     onClick={() => setSelectedChapter(null)}
                                     className="text-gray-500 hover:text-gray-800"
                                 >
@@ -614,21 +614,21 @@ export default function DetailKomik() {
                                                 .map((imgUrl, idx) => {
                                                     const cleanedUrl = cleanImageUrl(imgUrl);
                                                     return (
-                                                        <div key={idx} className="border rounded-lg overflow-hidden">
-                                                            <div className="bg-gray-100 p-2 text-sm font-medium flex justify-between items-center">
-                                                                <span>Gambar #{idx + 1}</span>
+                                                <div key={idx} className="border rounded-lg overflow-hidden">
+                                                    <div className="bg-gray-100 p-2 text-sm font-medium flex justify-between items-center">
+                                                        <span>Gambar #{idx + 1}</span>
                                                                 <span className="text-xs text-gray-500 truncate max-w-xs">{cleanedUrl}</span>
-                                                            </div>
-                                                            <img
+                                                    </div>
+                                                    <img 
                                                                 src={cleanedUrl}
-                                                                alt={`${selectedChapter.title} - Page ${idx + 1}`}
-                                                                className="w-full object-contain"
-                                                                onError={(e) => {
-                                                                    e.target.onerror = null;
-                                                                    e.target.src = "https://via.placeholder.com/400x300?text=Error+Loading+Image";
-                                                                }}
-                                                            />
-                                                        </div>
+                                                        alt={`${selectedChapter.title} - Page ${idx + 1}`}
+                                                        className="w-full object-contain"
+                                                        onError={(e) => {
+                                                            e.target.onerror = null;
+                                                            e.target.src = "https://via.placeholder.com/400x300?text=Error+Loading+Image";
+                                                        }}
+                                                    />
+                                                </div>
                                                     );
                                                 })}
                                         </div>
@@ -661,7 +661,7 @@ export default function DetailKomik() {
                         <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
                             <div className="sticky top-0 bg-white p-4 border-b flex justify-between items-center">
                                 <h3 className="text-xl font-bold">Edit Gambar: {selectedChapter.title}</h3>
-                                <button
+                                <button 
                                     onClick={() => {
                                         setIsEditingImages(false);
                                         setSelectedChapter(null);
@@ -695,7 +695,7 @@ export default function DetailKomik() {
                                             </div>
                                         </div>
                                     </div>
-
+                                    
                                     <textarea
                                         rows="10"
                                         value={editingChapterImagesText}
@@ -707,7 +707,7 @@ export default function DetailKomik() {
                                         className={`w-full p-3 border ${editUrlValidationStatus.isValid ? 'border-gray-300' : 'border-red-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
                                         placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.jpg&#10;https://example.com/image3.jpg"
                                     />
-
+                                    
                                     {editUrlValidationStatus.message && (
                                         <div className={`text-sm ${editUrlValidationStatus.isValid ? 'text-green-600' : 'text-red-600'}`}>
                                             {editUrlValidationStatus.message}
@@ -752,7 +752,7 @@ export default function DetailKomik() {
                         </svg>
                         Daftar Chapter
                     </h2>
-
+                    
                     {chapters.length === 0 ? (
                         <div className="bg-gray-50 p-8 rounded-xl text-center">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -853,7 +853,7 @@ export default function DetailKomik() {
                                 *Jika kosong, gambar pertama akan digunakan sebagai cover
                             </p>
                         </div>
-
+                        
                         <div>
                             <div className="flex justify-between items-center mb-2">
                                 <label className="block text-sm font-medium text-gray-700">URL Gambar (Input Massal)</label>
@@ -861,7 +861,7 @@ export default function DetailKomik() {
                                     Masukkan satu URL per baris
                                 </span>
                             </div>
-
+                            
                             <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4">
                                 <div className="flex">
                                     <div className="flex-shrink-0">
@@ -882,12 +882,12 @@ export default function DetailKomik() {
                                     </div>
                                 </div>
                             </div>
-
+                            
                             <div className="space-y-4">
                                 <input
                                     type="file"
                                     accept=".csv"
-                                    onChange={(e) => {
+                                onChange={(e) => {
                                         const file = e.target.files[0];
                                         if (!file) {
                                             setUrlValidationStatus({
@@ -956,13 +956,13 @@ export default function DetailKomik() {
                                     </pre>
                                 </div>
                             </div>
-
+                            
                             {urlValidationStatus.message && (
                                 <div className={`mt-2 text-sm ${urlValidationStatus.isValid ? 'text-green-600' : 'text-red-600'}`}>
                                     {urlValidationStatus.message}
                                 </div>
                             )}
-
+                            
                             <div className="mt-4 flex items-center justify-end space-x-3">
                                 <button
                                     onClick={() => {

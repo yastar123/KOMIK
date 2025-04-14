@@ -1,10 +1,11 @@
 import { useRouter } from "next/router";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { db } from "../../../BE/firebase";
 import { collection, getDocs } from "firebase/firestore";
 import Link from "next/link";
 import Head from "next/head";
-import { motion, AnimatePresence } from "framer-motion";
+import { ChevronDown, Search, Grid, LayoutGrid, Download, ChevronUp, Star, Eye, BookOpen, X, Filter, Clock } from "lucide-react";
+import Layout from "../../../components/Layout";
 
 const ITEMS_PER_PAGE = 15;
 
@@ -14,21 +15,18 @@ export default function ComicPaginationPage() {
     const [comics, setComics] = useState([]);
     const [totalPages, setTotalPages] = useState(1);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
+    
+    // New state variables from GenrePage
+    const [allGenres, setAllGenres] = useState([]);
+    const [allTypes, setAllTypes] = useState([]);
+    const [allStatuses, setAllStatuses] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [filteredComics, setFilteredComics] = useState([]);
-    const [showScrollButton, setShowScrollButton] = useState(false);
-    const [activeFilter, setActiveFilter] = useState("all");
-    const [lastHoveredCard, setLastHoveredCard] = useState(null);
-    const headerRef = useRef(null);
-
-    // Detect scroll position for showing/hiding scroll to top button
-    useEffect(() => {
-        const handleScroll = () => {
-            setShowScrollButton(window.scrollY > 300);
-        };
-        window.addEventListener("scroll", handleScroll);
-        return () => window.removeEventListener("scroll", handleScroll);
-    }, []);
+    const [sortOption, setSortOption] = useState('Terbaru');
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [viewMode, setViewMode] = useState('grid');
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
 
     useEffect(() => {
         const fetchComics = async () => {
@@ -44,527 +42,488 @@ export default function ComicPaginationPage() {
                     rating: doc.data().rating || ((Math.random() * 2 + 3).toFixed(1)), // Random rating between 3.0-5.0
                     tags: doc.data().tags || ["Komik", "Manga"],
                     author: doc.data().author || "Penulis Populer",
-                    publishDate: doc.data().publishDate || new Date().toISOString().split('T')[0]
+                    publishDate: doc.data().publishDate || new Date().toISOString().split('T')[0],
+                    views: doc.data().views || Math.floor(Math.random() * 10000),
+                    status: doc.data().status || "Ongoing",
+                    chapters: doc.data().chapters || Math.floor(Math.random() * 100) + 1
                 }));
 
-                // Sort comics alphabetically by title
-                allComics.sort((a, b) => a.title.localeCompare(b.title));
+                // Extract genres, types and statuses
+                const genreSet = new Set();
+                const typeSet = new Set();
+                const statusSet = new Set();
 
+                allComics.forEach(comic => {
+                    if (comic.genres) {
+                        comic.genres.forEach(g => genreSet.add(g));
+                    }
+                    if (comic.type) typeSet.add(comic.type);
+                    if (comic.status) statusSet.add(comic.status);
+                });
+
+                setAllGenres([...genreSet]);
+                setAllTypes([...typeSet]);
+                setAllStatuses([...statusSet]);
+
+                // Apply initial sorting
+                const sortedComics = sortComics(allComics, sortOption);
+                
+                // Pagination logic from original code
                 const startIndex = (parseInt(page) - 1) * ITEMS_PER_PAGE;
-                const paginated = allComics.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+                const paginated = sortedComics.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
-                setComics(paginated);
+                setComics(sortedComics);
                 setFilteredComics(paginated);
-                setTotalPages(Math.ceil(allComics.length / ITEMS_PER_PAGE));
+                setTotalPages(Math.ceil(sortedComics.length / ITEMS_PER_PAGE));
             } catch (error) {
                 console.error("Error fetching comics:", error);
+                setError("Gagal memuat data komik. Silakan coba lagi.");
             } finally {
                 setIsLoading(false);
             }
         };
 
         fetchComics();
-    }, [page]);
+    }, [page, sortOption]);
 
-    // Filter comics based on search term and active filter
+    // Sort comics function from GenrePage
+    const sortComics = (comics, option) => {
+        const sortedComics = [...comics];
+        switch (option) {
+            case 'Popularitas':
+                return sortedComics.sort((a, b) => (b.views || 0) - (a.views || 0));
+            case 'Terbaru':
+                return sortedComics.sort((a, b) => {
+                    const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
+                    const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
+                    return dateB - dateA;
+                });
+            case 'A-Z':
+                return sortedComics.sort((a, b) => {
+                    const titleA = a.title?.toLowerCase() || '';
+                    const titleB = b.title?.toLowerCase() || '';
+                    return titleA.localeCompare(titleB);
+                });
+            default:
+                return sortedComics;
+        }
+    };
+
+    // Search and filter effect
     useEffect(() => {
-        let results = [...comics];
-
-        // Apply search filter
-        if (searchTerm.trim() !== "") {
-            results = results.filter(comic =>
-                comic.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                comic.description.toLowerCase().includes(searchTerm.toLowerCase())
+        if (comics.length === 0) return;
+        
+        let filtered = comics;
+        if (searchTerm !== "") {
+            filtered = comics.filter(comic =>
+                comic.title?.toLowerCase().includes(searchTerm.toLowerCase())
             );
         }
+        
+        // Maintain pagination with filtered results
+        const startIndex = (parseInt(page || 1) - 1) * ITEMS_PER_PAGE;
+        const paginated = filtered.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+        
+        setFilteredComics(paginated);
+        setTotalPages(Math.ceil(filtered.length / ITEMS_PER_PAGE));
+    }, [searchTerm, comics, page]);
 
-        // Apply genre filter
-        if (activeFilter !== "all") {
-            results = results.filter(comic =>
-                comic.genre && comic.genre.toLowerCase() === activeFilter.toLowerCase()
-            );
+    const handleFilterChange = (value, type) => {
+        if (value && value !== "all") {
+            router.push(`/genre/${value.toLowerCase()}`);
         }
+    };
 
-        setFilteredComics(results);
-    }, [searchTerm, comics, activeFilter]);
+    const toggleDropdown = () => {
+        setIsDropdownOpen(!isDropdownOpen);
+    };
+
+    const toggleViewMode = (mode) => {
+        setViewMode(mode);
+    };
 
     const currentPage = parseInt(page || "1");
 
-    // Scroll to top function
-    const scrollToTop = () => {
-        window.scrollTo({
-            top: 0,
-            behavior: "smooth"
-        });
+    // Apply sorting and update comic list
+    const applySorting = (option) => {
+        setSortOption(option);
+        setIsDropdownOpen(false);
+        const sorted = sortComics(comics, option);
+        const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+        const paginated = sorted.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+        setFilteredComics(paginated);
     };
 
-    // Get unique genres from comics
-    const genres = ["all", ...new Set(comics.map(comic => comic.genre?.toLowerCase()).filter(Boolean))];
+    // Loading state
+    if (isLoading) {
+        return (
+            <Layout>
+                <div className="flex items-center justify-center h-screen">
+                    <div className="text-center">
+                        <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                        <p className="mt-4 text-purple-400 text-lg font-medium">Memuat komik...</p>
+                    </div>
+                </div>
+            </Layout>
+        );
+    }
 
-    // Animation variants
-    const container = {
-        hidden: { opacity: 0 },
-        show: {
-            opacity: 1,
-            transition: {
-                staggerChildren: 0.05
-            }
-        }
-    };
-
-    const item = {
-        hidden: { y: 20, opacity: 0 },
-        show: {
-            y: 0,
-            opacity: 1,
-            transition: {
-                duration: 0.4,
-                ease: "easeOut"
-            }
-        }
-    };
-
-    const fadeIn = {
-        hidden: { opacity: 0 },
-        show: {
-            opacity: 1,
-            transition: {
-                duration: 0.5
-            }
-        }
-    };
-
-    const shimmer = {
-        hidden: {
-            backgroundPosition: "200% 0"
-        },
-        show: {
-            backgroundPosition: "-200% 0",
-            transition: {
-                duration: 2,
-                ease: "linear",
-                repeat: Infinity
-            }
-        }
-    };
+    // Error state
+    if (error) {
+        return (
+            <Layout>
+                <div className="flex items-center justify-center h-screen">
+                    <div className="text-center p-8 bg-gray-800/50 backdrop-blur-sm rounded-lg border border-red-500/50">
+                        <X className="w-12 h-12 text-red-500 mx-auto mb-4" />
+                        <p className="text-red-400 text-lg font-medium">{error}</p>
+                        <button
+                            onClick={() => window.location.reload()}
+                            className="mt-4 px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                        >
+                            Coba Lagi
+                        </button>
+                    </div>
+                </div>
+            </Layout>
+        );
+    }
 
     return (
-        <>
+        <Layout>
             <Head>
                 <title>Daftar Komik - Halaman {currentPage}</title>
                 <meta name="description" content={`Jelajahi koleksi komik kami - Halaman ${currentPage}`} />
             </Head>
 
-            <div className="min-h-screen bg-gray-900 py-6 px-3 sm:py-12 sm:px-6 lg:px-8">
-                <div className="max-w-7xl mx-auto">
-                    {/* Hero Section */}
-                    <motion.div
-                        ref={headerRef}
-                        initial={{ y: -20, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        transition={{ duration: 0.6 }}
-                        className="relative rounded-3xl overflow-hidden shadow-2xl mb-8 sm:mb-12"
+            <main className="container mx-auto px-4 py-8 bg-gray-900/50">
+                <div className="flex flex-col md:flex-row gap-8">
+                    {/* Mobile Filter Toggle Button */}
+                    <button
+                        onClick={() => setIsFilterOpen(!isFilterOpen)}
+                        className="md:hidden fixed bottom-6 right-6 z-50 w-14 h-14 bg-purple-500/20 backdrop-blur-sm rounded-full flex items-center justify-center border border-purple-500/50 shadow-lg hover:bg-purple-500/30 transition-all duration-300 group"
                     >
-                        <div className="absolute inset-0 bg-gradient-to-r from-purple-900 to-indigo-800"></div>
-                        <div className="absolute inset-0 opacity-20 bg-[url('/comic-pattern.svg')] bg-repeat"
-                            style={{ backgroundSize: "100px 100px", animation: "patternMove 60s linear infinite" }}>
-                        </div>
+                        <Filter className="w-6 h-6 text-purple-400 group-hover:text-purple-300 transition-colors" />
+                    </button>
 
-                        <motion.div
-                            className="relative py-10 px-4 text-center sm:py-16 sm:px-12 overflow-hidden"
-                            whileInView={{ scale: [0.95, 1], opacity: [0.8, 1] }}
-                            transition={{ duration: 0.5 }}
-                        >
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.2, duration: 0.6 }}
-                            >
-                                <h1 className="text-4xl font-extrabold text-white sm:text-5xl md:text-6xl drop-shadow-lg">
-                                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">
-                                        Galeri Komik
-                                    </span>
-                                </h1>
-                                <p className="mt-4 text-xl text-white/90 max-w-2xl mx-auto drop-shadow">
-                                    Jelajahi dunia fantasi melalui berbagai genre komik terbaik
-                                </p>
-                            </motion.div>
+                    {/* Left sidebar with filters */}
+                    <div className={`w-full md:w-1/4 transition-all duration-300 ${isFilterOpen ? 'fixed inset-0 z-40 bg-gray-900/95 backdrop-blur-sm p-4 overflow-y-auto' : 'hidden md:block'}`}>
+                        <div className="sticky top-24">
+                            <div className="flex justify-between items-center mb-6">
+                                <h1 className="text-2xl font-bold text-white bg-gradient-to-br from-purple-500 to-pink-500 p-4 rounded-lg shadow-lg backdrop-blur-sm">Filter Komik</h1>
+                                <button
+                                    onClick={() => setIsFilterOpen(false)}
+                                    className="md:hidden p-2 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 transition-colors"
+                                >
+                                    <X className="w-6 h-6 text-gray-400" />
+                                </button>
+                            </div>
 
-                            <div className="mt-8 flex flex-col sm:flex-row justify-center items-center gap-4 max-w-4xl mx-auto">
-                                <div className="relative w-full max-w-md">
-                                    <motion.div
-                                        whileTap={{ scale: 0.98 }}
-                                        className="relative"
+                            <div className="flex flex-col gap-4">
+                                {/* Genre Dropdown */}
+                                <div className="relative group">
+                                    <select
+                                        onChange={(e) => handleFilterChange(e.target.value, 'genre')}
+                                        defaultValue="all"
+                                        className="w-full bg-gray-800/95 backdrop-blur-sm rounded-lg px-4 py-3 flex justify-between items-center border border-gray-700/50 appearance-none cursor-pointer hover:border-purple-500/50 focus:border-purple-500 transition-all duration-300 shadow-lg"
                                     >
-                                        <input
-                                            type="text"
-                                            placeholder="Cari judul atau deskripsi komik..."
-                                            value={searchTerm}
-                                            onChange={(e) => setSearchTerm(e.target.value)}
-                                            className="w-full px-5 py-3 rounded-full text-gray-800 bg-white/90 backdrop-blur-sm border-2 border-white/50 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent placeholder-gray-500 shadow-lg"
-                                        />
-                                        <div className="absolute right-4 top-3">
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                            </svg>
-                                        </div>
-                                    </motion.div>
+                                        <option value="all">Genre</option>
+                                        {allGenres.map(genre => (
+                                            <option key={genre} value={genre}>{genre}</option>
+                                        ))}
+                                    </select>
+                                    <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                                        <ChevronDown size={20} className="text-gray-400 group-hover:text-purple-400 transition-colors" />
+                                    </div>
                                 </div>
 
-                                {/* Filter Tabs */}
-                                <div className="flex overflow-x-auto gap-2 w-full justify-center sm:max-w-md px-1 py-2 rounded-full bg-white/30 backdrop-blur-sm">
-                                    {genres.map((genre) => (
-                                        <motion.button
-                                            key={genre}
-                                            whileTap={{ scale: 0.95 }}
-                                            onClick={() => setActiveFilter(genre)}
-                                            className={`px-3 py-1 text-sm font-medium rounded-full whitespace-nowrap ${activeFilter === genre
-                                                ? 'bg-purple-600 text-white shadow-md'
-                                                : 'bg-white/70 text-gray-700 hover:bg-white hover:text-purple-600'
-                                                } transition-all duration-200`}
-                                        >
-                                            {genre === "all" ? "Semua" : genre.charAt(0).toUpperCase() + genre.slice(1)}
-                                        </motion.button>
-                                    ))}
+                                {/* Type Dropdown */}
+                                <div className="relative group">
+                                    <select
+                                        onChange={(e) => handleFilterChange(e.target.value, 'type')}
+                                        defaultValue="all"
+                                        className="w-full bg-gray-800/95 backdrop-blur-sm rounded-lg px-4 py-3 flex justify-between items-center border border-gray-700/50 appearance-none cursor-pointer hover:border-purple-500/50 focus:border-purple-500 transition-all duration-300 shadow-lg"
+                                    >
+                                        <option value="all">Tipe</option>
+                                        {allTypes.map(type => (
+                                            <option key={type} value={type}>{type}</option>
+                                        ))}
+                                    </select>
+                                    <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                                        <ChevronDown size={20} className="text-gray-400 group-hover:text-purple-400 transition-colors" />
+                                    </div>
+                                </div>
+
+                                {/* Status Dropdown */}
+                                <div className="relative group">
+                                    <select
+                                        onChange={(e) => handleFilterChange(e.target.value, 'status')}
+                                        defaultValue="all"
+                                        className="w-full bg-gray-800/95 backdrop-blur-sm rounded-lg px-4 py-3 flex justify-between items-center border border-gray-700/50 appearance-none cursor-pointer hover:border-purple-500/50 focus:border-purple-500 transition-all duration-300 shadow-lg"
+                                    >
+                                        <option value="all">Status</option>
+                                        {allStatuses.map(status => (
+                                            <option key={status} value={status}>{status}</option>
+                                        ))}
+                                    </select>
+                                    <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                                        <ChevronDown size={20} className="text-gray-400 group-hover:text-purple-400 transition-colors" />
+                                    </div>
                                 </div>
                             </div>
-                        </motion.div>
-                    </motion.div>
+                        </div>
+                    </div>
 
-                    {/* Loading State */}
-                    <AnimatePresence>
-                        {isLoading ? (
-                            <motion.div
-                                className="flex justify-center items-center h-64"
-                                initial="hidden"
-                                animate="show"
-                                exit={{ opacity: 0 }}
-                                variants={fadeIn}
-                            >
-                                <div className="flex flex-col items-center">
-                                    <motion.div
-                                        className="h-16 w-16 relative"
-                                        animate={{
-                                            rotate: 360,
-                                        }}
-                                        transition={{
-                                            duration: 1.5,
-                                            repeat: Infinity,
-                                            ease: "linear"
-                                        }}
-                                    >
-                                        <div className="absolute top-0 left-0 right-0 bottom-0 rounded-full border-8 border-purple-200 border-t-8 border-t-purple-600"></div>
-                                    </motion.div>
-                                    <motion.div
-                                        className="mt-4 px-4 py-2 bg-gradient-to-r from-purple-100 to-pink-100 bg-[length:400%_100%] rounded-lg"
-                                        variants={shimmer}
-                                        initial="hidden"
-                                        animate="show"
-                                    >
-                                        <p className="font-medium text-purple-700">Memuat koleksi komik...</p>
-                                    </motion.div>
+                    {/* Right content area */}
+                    <div className="w-full bg-gray-900/50 md:w-3/4">
+                        <div className="flex flex-col gap-6">
+                            {/* Top action bar */}
+                            <div className="flex flex-wrap gap-4 items-center bg-gray-800/95 backdrop-blur-sm p-4 rounded-lg border border-gray-700/50 shadow-lg">
+                                {/* Search bar */}
+                                <div className="flex-1 relative min-w-64 group">
+                                    <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                                        <Search size={20} className="text-gray-400 group-hover:text-purple-400 transition-colors" />
+                                    </div>
+                                    <input
+                                        type="text"
+                                        placeholder="Cari komik berdasarkan judul..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="w-full bg-gray-700/50 rounded-lg pl-10 pr-4 py-3 border border-gray-700/50 focus:outline-none focus:border-purple-500 hover:border-purple-500/50 transition-all duration-300"
+                                    />
                                 </div>
-                            </motion.div>
-                        ) : filteredComics.length === 0 ? (
-                            <motion.div
-                                className="text-center py-16 bg-gray-800/80 backdrop-blur-sm rounded-xl shadow-lg"
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ duration: 0.4 }}
-                            >
-                                <motion.div
-                                    initial={{ rotate: 0 }}
-                                    animate={{ rotate: [0, 10, -10, 0] }}
-                                    transition={{ duration: 0.5, delay: 0.2 }}
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-gray-400 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                </motion.div>
-                                <p className="text-xl text-gray-300">Tidak ada komik yang ditemukan</p>
-                                {(searchTerm || activeFilter !== "all") && (
-                                    <motion.button
-                                        onClick={() => {
-                                            setSearchTerm("");
-                                            setActiveFilter("all");
-                                        }}
-                                        className="mt-4 px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-300 shadow-md hover:shadow-lg"
-                                        whileHover={{ scale: 1.05 }}
-                                        whileTap={{ scale: 0.95 }}
+
+                                {/* Grid view toggle */}
+                                <div className="flex items-center gap-2 bg-gray-700/50 backdrop-blur-sm p-1 rounded-lg border border-gray-700/50">
+                                    <button
+                                        className={`p-2 rounded-lg transition-all duration-300 ${viewMode === 'grid' ? 'bg-purple-500/20 text-purple-400' : 'text-gray-400 hover:text-purple-400'}`}
+                                        onClick={() => toggleViewMode('grid')}
                                     >
-                                        Reset Pencarian
-                                    </motion.button>
-                                )}
-                            </motion.div>
-                        ) : (
-                            /* Comics Grid */
-                            <motion.div
-                                className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 md:gap-8"
-                                variants={container}
-                                initial="hidden"
-                                animate="show"
-                            >
-                                {filteredComics.map((comic) => (
-                                    <motion.div
-                                        key={comic.id}
-                                        variants={item}
-                                        className="group bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-purple-500/20 hover:-translate-y-2 relative"
-                                        onHoverStart={() => setLastHoveredCard(comic.id)}
-                                        onHoverEnd={() => setLastHoveredCard(null)}
+                                        <Grid size={20} />
+                                    </button>
+                                    <button
+                                        className={`p-2 rounded-lg transition-all duration-300 ${viewMode === 'list' ? 'bg-purple-500/20 text-purple-400' : 'text-gray-400 hover:text-purple-400'}`}
+                                        onClick={() => toggleViewMode('list')}
                                     >
-                                        <Link href={`/comic/${comic.id}`}>
-                                            <div className="relative h-44 sm:h-64 overflow-hidden">
+                                        <LayoutGrid size={20} />
+                                    </button>
+                                </div>
+
+                                {/* Sort options */}
+                                <div className="relative group">
+                                    <button
+                                        onClick={toggleDropdown}
+                                        className="bg-gray-700/50 backdrop-blur-sm rounded-lg px-4 py-3 flex items-center gap-2 border border-gray-700/50 hover:border-purple-500/50 transition-all duration-300"
+                                    >
+                                        <span>{sortOption}</span>
+                                        {isDropdownOpen ? <ChevronUp size={16} className="text-gray-400 group-hover:text-purple-400 transition-colors" /> : <ChevronDown size={16} className="text-gray-400 group-hover:text-purple-400 transition-colors" />}
+                                    </button>
+
+                                    {isDropdownOpen && (
+                                        <div className="absolute z-50 top-full right-0 mt-1 w-full bg-gray-800/95 backdrop-blur-sm rounded-lg shadow-lg border border-gray-700/50 animate-fadeIn">
+                                            <div className="relative z-50">
+                                                <ul className="z-50">
+                                                    <li
+                                                        className="px-4 py-2 hover:bg-purple-500/20 cursor-pointer transition-colors duration-300"
+                                                        onClick={() => applySorting('Popularitas')}
+                                                    >
+                                                        Popularitas
+                                                    </li>
+                                                    <li
+                                                        className="px-4 py-2 hover:bg-purple-500/20 cursor-pointer transition-colors duration-300"
+                                                        onClick={() => applySorting('Terbaru')}
+                                                    >
+                                                        Terbaru
+                                                    </li>
+                                                    <li
+                                                        className="px-4 py-2 hover:bg-purple-500/20 cursor-pointer transition-colors duration-300"
+                                                        onClick={() => applySorting('A-Z')}
+                                                    >
+                                                        A-Z
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Download button */}
+                                <button className="p-2 bg-gray-700/50 backdrop-blur-sm rounded-lg border border-gray-700/50 hover:border-purple-500/50 hover:text-purple-400 transition-all duration-300">
+                                    <Download size={20} />
+                                </button>
+                            </div>
+
+                            {/* Comic grid */}
+                            {filteredComics.length === 0 ? (
+                                <div className="bg-gray-900/95 backdrop-blur-sm p-8 rounded-lg text-center border border-gray-700/50 shadow-lg">
+                                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-700/50 rounded-full mb-4">
+                                        <X className="w-8 h-8 text-gray-400" />
+                                    </div>
+                                    <p className="text-xl text-gray-300">Tidak ada komik dengan filter ini.</p>
+                                </div>
+                            ) : (
+                                <div className={viewMode === 'grid'
+                                    ? 'grid grid-cols-2 bg-gray-900/50 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4'
+                                    : 'flex flex-col gap-4 bg-gray-900/50'}>
+                                    {filteredComics.map((comic) => (
+                                        <Link
+                                            key={comic.id}
+                                            href={`/comic/${comic.id}`}
+                                            className={`group cursor-pointer ${viewMode === 'list'
+                                                ? 'flex overflow-hidden bg-gray-900/50 backdrop-blur-sm rounded-lg border border-gray-700/50 hover:border-purple-500/50 transition-all duration-300 shadow-lg'
+                                                : 'bg-gray-800/95 backdrop-blur-sm rounded-lg overflow-hidden border border-gray-900/50 hover:border-purple-500/50 transition-all duration-300 shadow-lg'}`}
+                                        >
+                                            {/* Comic cover/image */}
+                                            <div className={`relative ${viewMode === 'grid'
+                                                ? 'aspect-[3/4] rounded-t-lg overflow-hidden'
+                                                : 'h-36 w-28 flex-shrink-0'}`}>
                                                 <img
-                                                    src={comic.imageUrl || "/comic-placeholder.jpg"}
+                                                    src={comic.imageUrl || '/api/placeholder/250/333'}
                                                     alt={comic.title}
-                                                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                                                    loading="lazy"
+                                                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                                                     onError={(e) => {
                                                         e.target.onerror = null;
                                                         e.target.src = "/comic-placeholder.jpg";
                                                     }}
                                                 />
-                                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                                <div className="absolute bottom-0 left-0 right-0 p-4 z-20 text-white transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                                                    <p className="text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                                                        {comic.genre || 'Genre tidak tersedia'}
-                                                    </p>
-                                                </div>
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
-                                                {/* New Badge */}
-                                                <div className="absolute top-2 left-2 z-20">
-                                                    <motion.div
-                                                        className="px-2 py-1 bg-red-500 text-white text-xs font-bold rounded-full shadow-md"
-                                                        animate={{
-                                                            scale: [1, 1.1, 1],
-                                                            rotate: [0, 3, -3, 0]
-                                                        }}
-                                                        transition={{
-                                                            duration: 1.5,
-                                                            repeat: Infinity,
-                                                            repeatDelay: 1
-                                                        }}
-                                                    >
-                                                        NEW
-                                                    </motion.div>
-                                                </div>
-
-                                                {/* Author Badge */}
-                                                <div className="absolute top-2 right-2 z-20">
-                                                    <div className="px-2 py-1 bg-black/50 backdrop-blur-sm text-white text-xs rounded-full">
-                                                        {comic.author?.split(' ')[0] || 'Author'}
+                                                {/* Status indicator */}
+                                                {comic.status && (
+                                                    <div className="absolute top-2 right-2 bg-red-600 px-2 py-1 rounded-full text-xs font-bold shadow-lg">
+                                                        {comic.status}
                                                     </div>
+                                                )}
+
+                                                {/* Country flag */}
+                                                {comic.country && viewMode === 'grid' && (
+                                                    <div className="absolute bottom-2 right-2">
+                                                        <span className="text-sm">
+                                                            {comic.country === 'kr' ? '🇰🇷' :
+                                                                comic.country === 'cn' ? '🇨🇳' :
+                                                                    comic.country === 'jp' ? '🇯🇵' : ''}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Comic info */}
+                                            <div className={viewMode === 'list'
+                                                ? 'flex-1 p-4 flex flex-col'
+                                                : 'p-3 flex flex-col'}>
+                                                <div className={viewMode === 'list' ? 'flex justify-between items-start mb-2' : ''}>
+                                                    <h2 className={`font-medium truncate group-hover:text-purple-400 transition-colors ${viewMode === 'grid' ? 'text-sm' : 'text-lg mb-1'}`}>
+                                                        {comic.title}
+                                                    </h2>
+
+                                                    {viewMode === 'list' && (
+                                                        <span className="bg-purple-500/20 text-purple-400 px-3 py-1 rounded-full text-xs font-medium ml-2 flex-shrink-0">
+                                                            {comic.status || "Ongoing"}
+                                                        </span>
+                                                    )}
                                                 </div>
-                                            </div>
-                                        </Link>
 
-                                        <div className="p-4">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <h3 className="text-lg font-bold text-white line-clamp-1 group-hover:text-purple-400 transition-colors">
-                                                    {comic.title}
-                                                </h3>
-                                                <div className="flex items-center text-yellow-500">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                                    </svg>
-                                                    <span className="ml-1 text-xs font-medium">{comic.rating || '4.5'}</span>
+                                                {viewMode === 'list' && (
+                                                    <div className="text-xs text-gray-400 mb-2">Chapter {comic.chapters || "1"}</div>
+                                                )}
+
+                                                <div className={`flex items-center gap-2 text-xs ${viewMode === 'grid' ? 'mt-1' : ''}`}>
+                                                    {viewMode === 'list' ? (
+                                                        <>
+                                                            <div className="flex items-center gap-1 text-gray-400">
+                                                                <Eye size={14} />
+                                                                <span>{comic.views || '32.1m'}</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-1 text-gray-400">
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <div className="flex items-center gap-1 text-gray-400">
+                                                                <Eye size={14} />
+                                                                <span>{comic.views || 0} views</span>
+                                                            </div>
+                                                        </>
+                                                    )}
                                                 </div>
+
+                                                {/* Show synopsis in list view */}
+                                                {viewMode === 'list' && (
+                                                    <p className="text-xs text-gray-400 mt-2 line-clamp-2">
+                                                        {comic.description || "Tidak Ada Sinopsis"}
+                                                    </p>
+                                                )}
+
+                                                {/* Show genres in grid view */}
+                                                {viewMode === 'grid' && comic.genres && (
+                                                    <div className="flex flex-wrap gap-1 mt-2">
+                                                        {comic.genres.slice(0, 2).map((g, index) => (
+                                                            <span key={index} className="px-2 py-1 bg-gray-700/50 text-xs text-gray-300 rounded-full">
+                                                                {g}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                )}
                                             </div>
-
-                                            <p className="text-gray-400 text-sm line-clamp-2 mb-3">{comic.description}</p>
-
-                                            <div className="flex flex-wrap gap-2 mb-3">
-                                                {comic.tags?.slice(0, 2).map((tag, index) => (
-                                                    <span
-                                                        key={index}
-                                                        className="px-2 py-1 bg-purple-900/50 text-purple-300 text-xs rounded-full"
-                                                    >
-                                                        {tag}
-                                                    </span>
-                                                ))}
-                                            </div>
-
-                                            <Link href={`/comic/${comic.id}`}>
-                                                <motion.span
-                                                    className="inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-medium rounded-lg w-full transition-all duration-300 relative overflow-hidden"
-                                                    whileHover={{ scale: 1.02 }}
-                                                    whileTap={{ scale: 0.98 }}
-                                                >
-                                                    <span className="relative z-10">Baca Selengkapnya</span>
-                                                    <motion.span
-                                                        className="absolute inset-0 bg-gradient-to-r from-pink-500 to-purple-600 opacity-0"
-                                                        whileHover={{ opacity: 1 }}
-                                                        transition={{ duration: 0.3 }}
-                                                    />
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1 transform group-hover:translate-x-1 transition-transform" viewBox="0 0 20 20" fill="currentColor">
-                                                        <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
-                                                    </svg>
-                                                </motion.span>
-                                            </Link>
-
-                                            {/* Card Spotlight Effect */}
-                                            {lastHoveredCard === comic.id && (
-                                                <div className="absolute -inset-0.5 bg-gradient-to-r from-pink-600 to-purple-600 rounded-xl blur opacity-30 group-hover:opacity-50 transition duration-1000 group-hover:duration-200 animate-gradient-x -z-10"></div>
-                                            )}
-                                        </div>
-                                    </motion.div>
-                                ))}
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-
-                    {/* Pagination */}
-                    {totalPages > 1 && (
-                        <motion.div
-                            className="mt-10 flex justify-center"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.5 }}
-                        >
-                            <nav className="flex items-center gap-2">
-                                <Link
-                                    href={`/comic/page/${Math.max(1, currentPage - 1)}`}
-                                    className={`px-4 py-2 rounded-lg ${currentPage === 1
-                                        ? 'bg-gray-800/50 text-gray-500 cursor-not-allowed'
-                                        : 'bg-purple-600 text-white hover:bg-purple-700'
-                                        } transition-colors`}
-                                >
-                                    Sebelumnya
-                                </Link>
-                                <div className="flex items-center gap-2">
-                                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                                        <Link
-                                            key={page}
-                                            href={`/comic/page/${page}`}
-                                            className={`px-4 py-2 rounded-lg ${currentPage === page
-                                                ? 'bg-purple-600 text-white'
-                                                : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
-                                                } transition-colors`}
-                                        >
-                                            {page}
                                         </Link>
                                     ))}
                                 </div>
-                                <Link
-                                    href={`/comic/page/${Math.min(totalPages, currentPage + 1)}`}
-                                    className={`px-4 py-2 rounded-lg ${currentPage === totalPages
-                                        ? 'bg-gray-800/50 text-gray-500 cursor-not-allowed'
-                                        : 'bg-purple-600 text-white hover:bg-purple-700'
-                                        } transition-colors`}
-                                >
-                                    Selanjutnya
-                                </Link>
-                            </nav>
-                        </motion.div>
-                    )}
+                            )}
 
-                    {/* Go to Top Button */}
-                    <AnimatePresence>
-                        {showScrollButton && (
-                            <motion.button
-                                onClick={scrollToTop}
-                                className="fixed bottom-8 right-8 p-3 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg hover:from-purple-700 hover:to-pink-700 transition-colors duration-200 z-50"
-                                aria-label="Scroll to top"
-                                initial={{ opacity: 0, scale: 0.5 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.5 }}
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.9 }}
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                                </svg>
-                            </motion.button>
-                        )}
-                    </AnimatePresence>
-
-                    {/* Mobile Navigation */}
-                    <div className="sm:hidden fixed bottom-0 inset-x-0 bg-gray-800/90 backdrop-blur-md border-t border-gray-700 shadow-lg z-40">
-                        <div className="flex justify-around py-2 px-2">
-                            <Link href="/comic/page/1">
-                                <motion.div
-                                    className="flex flex-col items-center p-2"
-                                    whileTap={{ scale: 0.9 }}
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                                    </svg>
-                                    <span className="text-xs text-gray-300 mt-1">Home</span>
-                                </motion.div>
-                            </Link>
-
-                            <motion.button
-                                className="flex flex-col items-center p-2"
-                                onClick={() => {
-                                    setSearchTerm("");
-                                    setActiveFilter("all");
-                                }}
-                                whileTap={{ scale: 0.9 }}
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                </svg>
-                                <span className="text-xs text-gray-300 mt-1">Reset</span>
-                            </motion.button>
-
-                            <Link href={currentPage > 1 ? `/comic/page/${currentPage - 1}` : `/comic/page/1`}>
-                                <motion.div
-                                    className={`flex flex-col items-center p-2 ${currentPage === 1 ? 'opacity-50' : ''}`}
-                                    whileTap={currentPage !== 1 ? { scale: 0.9 } : {}}
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                                    </svg>
-                                    <span className="text-xs text-gray-300 mt-1">Prev</span>
-                                </motion.div>
-                            </Link>
-
-                            <Link href={currentPage < totalPages ? `/comic/page/${currentPage + 1}` : `/comic/page/${totalPages}`}>
-                                <motion.div
-                                    className={`flex flex-col items-center p-2 ${currentPage === totalPages ? 'opacity-50' : ''}`}
-                                    whileTap={currentPage !== totalPages ? { scale: 0.9 } : {}}
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                    </svg>
-                                    <span className="text-xs text-gray-300 mt-1">Next</span>
-                                </motion.div>
-                            </Link>
+                            {/* Pagination */}
+                            {totalPages > 1 && (
+                                <div className="mt-8 bg-gray-800/95 backdrop-blur-sm p-4 rounded-lg border border-gray-700/50 shadow-lg">
+                                    <nav className="flex justify-center">
+                                        <ul className="flex items-center gap-2">
+                                            <li>
+                                                <Link
+                                                    href={`/comic/page/${Math.max(1, currentPage - 1)}`}
+                                                    className={`flex items-center justify-center px-4 py-2 rounded-lg border ${currentPage === 1 
+                                                        ? 'bg-gray-700/30 text-gray-500 border-gray-700/50 cursor-not-allowed' 
+                                                        : 'bg-gray-700/50 border-gray-700/50 hover:bg-purple-500/20 hover:border-purple-500/50 hover:text-purple-400 transition-all duration-300'}`}
+                                                >
+                                                    Sebelumnya
+                                                </Link>
+                                            </li>
+                                            
+                                            {/* Page numbers */}
+                                            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                                // Show pages around current page
+                                                const pageToShow = i + 1;
+                                                if (totalPages <= 5 || pageToShow <= 3 || pageToShow > totalPages - 2) {
+                                                    return (
+                                                        <li key={pageToShow}>
+                                                            <Link
+                                                                href={`/comic/page/${pageToShow}`}
+                                                                className={`flex items-center justify-center w-10 h-10 rounded-lg ${currentPage === pageToShow
+                                                                    ? 'bg-purple-500/30 text-purple-400 border border-purple-500/50' 
+                                                                    : 'bg-gray-700/50 hover:bg-purple-500/20 hover:text-purple-400 border border-gray-700/50 hover:border-purple-500/50 transition-all duration-300'}`}
+                                                            >
+                                                                {pageToShow}
+                                                            </Link>
+                                                        </li>
+                                                    );
+                                                }
+                                                return null;
+                                            })}
+                                            
+                                            <li>
+                                                <Link
+                                                    href={`/comic/page/${Math.min(totalPages, currentPage + 1)}`}
+                                                    className={`flex items-center justify-center px-4 py-2 rounded-lg border ${currentPage === totalPages 
+                                                        ? 'bg-gray-700/30 text-gray-500 border-gray-700/50 cursor-not-allowed' 
+                                                        : 'bg-gray-700/50 border-gray-700/50 hover:bg-purple-500/20 hover:border-purple-500/50 hover:text-purple-400 transition-all duration-300'}`}
+                                                >
+                                                    Selanjutnya
+                                                </Link>
+                                            </li>
+                                        </ul>
+                                    </nav>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <style jsx global>{`
-                @keyframes patternMove {
-                    0% { background-position: 0% 0%; }
-                    100% { background-position: 100% 100%; }
-                }
-                
-                @keyframes animate-gradient-x {
-                    0% { background-position: 0% 50%; }
-                    50% { background-position: 100% 50%; }
-                    100% { background-position: 0% 50%; }
-                }
-                
-                .animate-gradient-x {
-                    animation: animate-gradient-x 3s ease infinite;
-                }
-                
-                .line-clamp-1 {
-                    display: -webkit-box;
-                    -webkit-line-clamp: 1;
-                    -webkit-box-orient: vertical;
-                    overflow: hidden;
-                }
-                
-                .line-clamp-2 {
-                    display: -webkit-box;
-                    -webkit-line-clamp: 2;
-                    -webkit-box-orient: vertical;
-                    overflow: hidden;
-                }
-            `}</style>
-        </>
+            </main>
+        </Layout>
     );
 }

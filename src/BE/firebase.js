@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, setDoc } from "firebase/firestore";
+import { getFirestore, collection, addDoc, getDocs } from "firebase/firestore";
+import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
 const firebaseConfig = {
     apiKey: "AIzaSyBIPWJtrNHHas2qobYxqVWvh_T7wiQRjWk",
@@ -12,9 +13,13 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 const db = getFirestore(app);
-const collection = db.collection;
-const addDoc = db.addDoc;
-const getDocs = db.getDocs;
 
-export { db, collection, addDoc, getDocs };
+// Konfigurasi untuk Google Auth
+const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({
+    prompt: 'select_account'
+});
+
+export { db, auth, googleProvider, collection, addDoc, getDocs };

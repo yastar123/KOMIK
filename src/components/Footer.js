@@ -18,9 +18,9 @@ const Footer = () => {
             behavior: "smooth"
         });
     };
-
+   
     return (
-        <footer className="bg-gray-900/50 backdrop-blur-md border-t border-gray-700/30">
+        <footer className="bg-[#111929] backdrop-blur-md border-t border-gray-700/30">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                     {/* Brand Section */}
@@ -124,23 +124,18 @@ const Footer = () => {
                         <h3 className="text-white font-semibold text-lg">Kategori</h3>
                         <ul className="space-y-2">
                             <li>
-                                <Link href="/type/manga" className="text-gray-300 hover:text-purple-400 transition-colors text-sm">
+                                <Link href="/genre/manga" className="text-gray-300 hover:text-purple-400 transition-colors text-sm">
                                     Manga
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/type/manhua" className="text-gray-300 hover:text-purple-400 transition-colors text-sm">
+                                <Link href="/genre/manhua" className="text-gray-300 hover:text-purple-400 transition-colors text-sm">
                                     Manhua
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/type/manhwa" className="text-gray-300 hover:text-purple-400 transition-colors text-sm">
+                                <Link href="/genre/manhwa" className="text-gray-300 hover:text-purple-400 transition-colors text-sm">
                                     Manhwa
-                                </Link>
-                            </li>
-                            <li>
-                                <Link href="/latest" className="text-gray-300 hover:text-purple-400 transition-colors text-sm">
-                                    Terbaru
                                 </Link>
                             </li>
                         </ul>

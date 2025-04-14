@@ -11,7 +11,7 @@ import {
     Timestamp,
 } from "firebase/firestore";
 import Link from "next/link";
-import { Play, Bookmark, ListPlus, Star, Eye, MessageSquare, ChevronLeft, Search, Info, FileText, List, ChevronDown, Home } from "lucide-react";
+import { Play, Bookmark, ListPlus, Star, Eye, MessageSquare, ChevronLeft, Search, Info, FileText, List, ChevronDown, Home, Clock, ChevronRight } from "lucide-react";
 import Layout from "../../components/Layout";
 
 export default function ComicDetail() {
@@ -23,6 +23,7 @@ export default function ComicDetail() {
     const [chapters, setChapters] = useState([]);
     const [selectedTab, setSelectedTab] = useState("chapters");
     const [searchQuery, setSearchQuery] = useState("");
+    const [isExpanded, setIsExpanded] = useState(false);
 
     useEffect(() => {
         if (!id) return;
@@ -161,12 +162,10 @@ export default function ComicDetail() {
                             </div>
 
                             {/* Title and info with enhanced typography */}
-                            <div className="md:flex-1 mt-4 md:pt-14">
-                                <h1 className="text-2xl md:text-3xl text-center md:text-left font-bold md:mb-1 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                            <div className="md:flex-1 mt-4 mb-2 md:pt-14">
+                                <h1 className="text-2xl bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent md:text-3xl text-center md:text-left font-bold md:mb-1">
                                     {comic.title}
                                 </h1>
-                                <p className="text-gray-300 mb-4 text-center md:text-left">{detailKomik?.title || ""}</p>
-
                                 {/* Action buttons with enhanced styling */}
                                 <div className="flex flex-col md:flex-row gap-3 ">
                                     {chapters.length > 0 && (
@@ -217,8 +216,15 @@ export default function ComicDetail() {
                         {/* Enhanced description box */}
                         <div className="mt-4 bg-gray-900/50 backdrop-blur-md p-4 rounded-lg border border-gray-700/50 shadow-lg">
                             <p className="text-sm text-gray-300">
-                                {comic.description}
-                                <span className="text-purple-400 cursor-pointer ml-1 hover:text-purple-300 transition-colors">Read More</span>
+                                {isExpanded ? comic.description : `${comic.description?.slice(0, 250)}${comic.description?.length > 250 ? '...' : ''}`}
+                                {comic.description?.length > 250 && (
+                                    <span 
+                                        onClick={() => setIsExpanded(!isExpanded)} 
+                                        className="text-purple-400 cursor-pointer ml-1 hover:text-purple-300 transition-colors"
+                                    >
+                                        {isExpanded ? 'Show Less' : 'Read More'}
+                                    </span>
+                                )}
                             </p>
                         </div>
                     </div>
@@ -250,20 +256,20 @@ export default function ComicDetail() {
                         </div>
 
                         <div className="bg-gray-900/50 backdrop-blur-md p-4 rounded-lg border border-gray-700/50 shadow-lg">
-                            <span className="text-gray-400 text-xs md:text-sm">Format</span>
+                            <span className="text-gray-400 text-xs md:text-sm">Status</span>
                             <div className="flex mt-2">
-                                <span className="bg-gray-700/50 backdrop-blur-sm px-3 py-1.5 text-xs md:text-sm rounded-full border border-gray-600/50">
-                                    {comic.format || "Manhwa"}
-                                </span>
+                                <Link href={`/genre/${comic.status?.toLowerCase()}`} className="bg-gray-700/50 backdrop-blur-sm px-3 py-1.5 text-xs md:text-sm rounded-full border border-gray-600/50">
+                                    {comic.status || "Ongoing"}
+                                </Link>
                             </div>
                         </div>
 
                         <div className="bg-gray-900/50 backdrop-blur-md p-4 rounded-lg border border-gray-700/50 shadow-lg">
                             <span className="text-gray-400 text-xs md:text-sm">Type</span>
                             <div className="flex mt-2">
-                                <span className="bg-gray-700/50 backdrop-blur-sm px-3 py-1.5 text-xs md:text-sm rounded-full border border-gray-600/50">
+                                <Link href={`/genre/${comic.type?.toLowerCase()}`} className="bg-gray-700/50 backdrop-blur-sm px-3 py-1.5 text-xs md:text-sm rounded-full border border-gray-600/50">
                                     {comic.type || "Project"}
-                                </span>
+                                </Link>
                             </div>
                         </div>
                     </div>
@@ -329,39 +335,43 @@ export default function ComicDetail() {
                 {/* Enhanced chapters list */}
                 {selectedTab === 'chapters' && (
                     <div className="flex-1 overflow-y-auto">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+                        <div className="max-w-4xl mx-auto p-4">
                             {filteredChapters.length > 0 ? (
-                                filteredChapters.map((chapter) => (
-                                    <Link key={chapter.id} href={`/comic/${id}/${chapter.id}`}>
-                                        <div className="bg-gray-900/50 backdrop-blur-md hover:bg-gray-700/50 transition-all duration-300 rounded-lg overflow-hidden cursor-pointer border border-gray-700/50 shadow-lg group">
-                                            <div className="relative h-40">
-                                                <img
-                                                    src={chapter.coverImage || "/api/placeholder/240/160"}
-                                                    alt={chapter.title}
-                                                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                                />
-                                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                                {chapter.isLatest && (
-                                                    <div className="absolute top-2 right-2 bg-purple-600/90 backdrop-blur-sm px-2 py-1 rounded-full text-xs font-bold uppercase">
-                                                        NEW
+                                <div className="space-y-2">
+                                    {filteredChapters.map((chapter) => (
+                                        <Link 
+                                            key={chapter.id} 
+                                            href={`/comic/${id}/${chapter.id}`}
+                                        >
+                                            <div className="group bg-gray-900/50 hover:bg-gray-800/70 backdrop-blur-md border border-gray-700/50 rounded-lg overflow-hidden transition-all duration-300 hover:border-purple-500/50 hover:shadow-lg hover:shadow-purple-500/10">
+                                                <div className="flex items-center justify-between p-4 sm:px-6">
+                                                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-3">
+                                                                <span className="text-lg font-semibold text-gray-200 group-hover:text-purple-400 transition-colors">Chapter {chapter.title}</span>
+                                                                {chapter.isLatest && (
+                                                                    <span className="bg-purple-600/90 text-white px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide shadow-lg shadow-purple-500/20">
+                                                                        NEW
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <p className="text-sm text-gray-400 mt-1 truncate">
+                                                                {chapter.timestamp ? formatTimestamp(chapter.timestamp) : "Unknown date"}
+                                                            </p>
+                                                        </div>
+                                                       
                                                     </div>
-                                                )}
+                                                </div>
                                             </div>
-                                            <div className="p-3">
-                                                <p className="font-medium group-hover:text-purple-400 transition-colors">{chapter.title}</p>
-                                                <p className="text-xs text-gray-500 mt-1">
-                                                    {chapter.timestamp ? formatTimestamp(chapter.timestamp) : "Unknown date"}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </Link>
-                                ))
+                                        </Link>
+                                    ))}
+                                </div>
                             ) : (
-                                <div className="col-span-full text-center py-8">
-                                    <div className="inline-flex items-center justify-center w-12 h-12 bg-gray-900/50 backdrop-blur-md rounded-full mb-4">
-                                        <Search className="w-6 h-6 text-gray-400" />
+                                <div className="text-center py-12 px-4">
+                                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-900/50 backdrop-blur-md rounded-full mb-4 border border-gray-700/50">
+                                        <Search className="w-8 h-8 text-gray-400" />
                                     </div>
-                                    <p className="text-gray-400">
+                                    <p className="text-gray-400 text-lg">
                                         {searchQuery ? "No chapters found matching your search." : "Belum ada chapter."}
                                     </p>
                                 </div>

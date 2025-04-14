@@ -62,15 +62,39 @@ export default function GenrePage() {
         fetchData();
     }, [genre]);
 
+    const sortComics = (comics, option) => {
+        const sortedComics = [...comics];
+        switch (option) {
+            case 'Popularitas':
+                return sortedComics.sort((a, b) => (b.views || 0) - (a.views || 0));
+            case 'Terbaru':
+                return sortedComics.sort((a, b) => {
+                    const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
+                    const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
+                    return dateB - dateA;
+                });
+            case 'A-Z':
+                return sortedComics.sort((a, b) => {
+                    const titleA = a.title?.toLowerCase() || '';
+                    const titleB = b.title?.toLowerCase() || '';
+                    return titleA.localeCompare(titleB);
+                });
+            default:
+                return sortedComics;
+        }
+    };
+
     useEffect(() => {
-        if (searchTerm === "") {
-            setFilteredComics(komikList);
-        } else {
-            const result = komikList.filter(comic =>
+        let filtered = komikList;
+        if (searchTerm !== "") {
+            filtered = komikList.filter(comic =>
                 comic.title?.toLowerCase().includes(searchTerm.toLowerCase())
             );
-            setFilteredComics(result);
         }
+        
+        // Apply sorting to filtered results
+        const sortedResults = sortComics(filtered, sortOption);
+        setFilteredComics(sortedResults);
     }, [searchTerm, komikList]);
 
     const handleFilterChange = (value, type) => {
@@ -110,7 +134,7 @@ export default function GenrePage() {
                         <div className={`w-full md:w-1/4 transition-all duration-300 ${isFilterOpen ? 'fixed inset-0 z-40 bg-gray-900/95 backdrop-blur-sm p-4 overflow-y-auto' : 'hidden md:block'}`}>
                             <div className="sticky top-24">
                                 <div className="flex justify-between items-center mb-6">
-                                    <h1 className="text-2xl font-bold text-purple-400 bg-gradient-to-r from-purple-500/20 to-pink-500/20 p-4 rounded-lg shadow-lg backdrop-blur-sm">Filter: {activeFilter}</h1>
+                                    <h1 className="text-2xl font-bold text-white bg-gradient-to-br from-purple-500 to-pink-500 p-4 rounded-lg shadow-lg backdrop-blur-sm">Filter: {activeFilter}</h1>
                                     <button
                                         onClick={() => setIsFilterOpen(false)}
                                         className="md:hidden p-2 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 transition-colors"
@@ -170,30 +194,6 @@ export default function GenrePage() {
                                             <ChevronDown size={20} className="text-gray-400 group-hover:text-purple-400 transition-colors" />
                                         </div>
                                     </div>
-
-                                    {/* Format - Placeholder */}
-                                    <div className="relative group">
-                                        <button className="w-full bg-gray-800/95 backdrop-blur-sm rounded-lg px-4 py-3 flex justify-between items-center border border-gray-700/50 hover:border-purple-500/50 transition-all duration-300 shadow-lg">
-                                            <span>Format</span>
-                                            <ChevronDown size={20} className="text-gray-400 group-hover:text-purple-400 transition-colors" />
-                                        </button>
-                                    </div>
-
-                                    {/* Author - Placeholder */}
-                                    <div className="relative group">
-                                        <button className="w-full bg-gray-800/95 backdrop-blur-sm rounded-lg px-4 py-3 flex justify-between items-center border border-gray-700/50 hover:border-purple-500/50 transition-all duration-300 shadow-lg">
-                                            <span>Author</span>
-                                            <ChevronDown size={20} className="text-gray-400 group-hover:text-purple-400 transition-colors" />
-                                        </button>
-                                    </div>
-
-                                    {/* Artist - Placeholder */}
-                                    <div className="relative group">
-                                        <button className="w-full bg-gray-800/95 backdrop-blur-sm rounded-lg px-4 py-3 flex justify-between items-center border border-gray-700/50 hover:border-purple-500/50 transition-all duration-300 shadow-lg">
-                                            <span>Artist</span>
-                                            <ChevronDown size={20} className="text-gray-400 group-hover:text-purple-400 transition-colors" />
-                                        </button>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -244,13 +244,16 @@ export default function GenrePage() {
                                         </button>
 
                                         {isDropdownOpen && (
-                                            <div className="absolute top-full right-0 mt-1 w-full bg-gray-800/95 backdrop-blur-sm rounded-lg shadow-lg z-10 border border-gray-700/50 animate-fadeIn">
+                                            <div className="absolute z-50 top-full right-0 mt-1 w-full bg-gray-800/95 backdrop-blur-sm rounded-lg shadow-lg border border-gray-700/50 animate-fadeIn">
+                                                <div className="relative z-50">
                                                 <ul>
                                                     <li
                                                         className="px-4 py-2 hover:bg-purple-500/20 cursor-pointer transition-colors duration-300"
                                                         onClick={() => {
                                                             setSortOption('Popularitas');
                                                             setIsDropdownOpen(false);
+                                                            const sorted = sortComics(filteredComics, 'Popularitas');
+                                                            setFilteredComics(sorted);
                                                         }}
                                                     >
                                                         Popularitas
@@ -260,6 +263,8 @@ export default function GenrePage() {
                                                         onClick={() => {
                                                             setSortOption('Terbaru');
                                                             setIsDropdownOpen(false);
+                                                            const sorted = sortComics(filteredComics, 'Terbaru');
+                                                            setFilteredComics(sorted);
                                                         }}
                                                     >
                                                         Terbaru
@@ -269,11 +274,14 @@ export default function GenrePage() {
                                                         onClick={() => {
                                                             setSortOption('A-Z');
                                                             setIsDropdownOpen(false);
+                                                            const sorted = sortComics(filteredComics, 'A-Z');
+                                                            setFilteredComics(sorted);
                                                         }}
                                                     >
                                                         A-Z
                                                     </li>
                                                 </ul>
+                                                </div>
                                             </div>
                                         )}
                                     </div>
@@ -318,7 +326,7 @@ export default function GenrePage() {
                                                     {/* Daily updated indicator */}
                                                     {comic.dailyViews > 0 && (
                                                         <div className="absolute top-2 right-2 bg-red-600 px-2 py-1 rounded-full text-xs font-bold shadow-lg">
-                                                            UP
+                                                            {comic.status || "Ongoing"}
                                                         </div>
                                                     )}
 
@@ -358,16 +366,8 @@ export default function GenrePage() {
                                                         {viewMode === 'list' ? (
                                                             <>
                                                                 <div className="flex items-center gap-1 text-gray-400">
-                                                                    <Star size={14} className="text-yellow-400 fill-yellow-400" />
-                                                                    <span className="font-medium">{comic.rating || '8.6'}</span>
-                                                                </div>
-                                                                <div className="flex items-center gap-1 text-gray-400">
                                                                     <Eye size={14} />
                                                                     <span>{comic.views || '32.1m'}</span>
-                                                                </div>
-                                                                <div className="flex items-center gap-1 text-gray-400">
-                                                                    <BookOpen size={14} />
-                                                                    <span>{comic.reads || '18.7k'}</span>
                                                                 </div>
                                                             </>
                                                         ) : (
@@ -387,7 +387,7 @@ export default function GenrePage() {
                                                     {/* Show synopsis in list view */}
                                                     {viewMode === 'list' && (
                                                         <p className="text-xs text-gray-400 mt-2 line-clamp-2">
-                                                            {comic.synopsis || "Karena dia memiliki warisan Ancient Demonic emperor Demonic Emperor Zhuo Yifan menemui nasib sial karena dikhianati dan..."}
+                                                            {comic.description || "Tidak Ada Sinopsis"}
                                                         </p>
                                                     )}
 
