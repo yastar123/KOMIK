@@ -146,8 +146,8 @@ export default function ChapterDetail() {
                                     alt={`Page ${index + 1}`}
                                     className="w-full h-auto"
                                     loading="lazy"
-                                    width={800}
-                                    height={1200}
+                                    width={400}
+                                    height={400}
                                 />
                             </div>
                         ))}
