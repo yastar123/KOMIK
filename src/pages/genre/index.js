@@ -5,6 +5,7 @@ import { collection, getDocs } from "firebase/firestore";
 import Link from "next/link";
 import { ChevronDown, Search, Grid, LayoutGrid, Download, ChevronUp, Star, Eye, BookOpen, X, Filter, Clock } from "lucide-react";
 import Layout from "../../components/Layout";
+import Image from "next/image";
 
 export default function GenrePage() {
     const router = useRouter();
@@ -92,6 +93,7 @@ export default function GenrePage() {
         // Apply sorting to filtered results
         const sortedResults = sortComics(filtered, sortOption);
         setFilteredComics(sortedResults);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchTerm, komikList]);
 
     const handleFilterChange = (value, type) => {
@@ -340,7 +342,7 @@ export default function GenrePage() {
                                             <div className={`relative ${viewMode === 'grid'
                                                 ? 'aspect-[3/4] rounded-t-lg overflow-hidden'
                                                 : 'h-36 w-28 flex-shrink-0'}`}>
-                                                <img
+                                                <Image
                                                     src={comic.imageUrl || '/api/placeholder/250/333'}
                                                     alt={comic.title}
                                                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"

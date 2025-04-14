@@ -12,6 +12,7 @@ import {
 } from "firebase/firestore";
 import { useRouter } from "next/router";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function DetailKomik() {
     const [comic, setComic] = useState(null);
@@ -496,7 +497,7 @@ export default function DetailKomik() {
                                                 <span className="text-xs text-gray-500 truncate max-w-xs">{img.imageUrl}</span>
                                             </div>
                                             <div className="relative pb-[56.25%] h-0">
-                                                <img 
+                                                <Image
                                                     src={img.imageUrl} 
                                                     alt={`Preview gambar ${img.order}`}
                                                     className="absolute h-full w-full object-contain"
@@ -555,7 +556,7 @@ export default function DetailKomik() {
                                                 <span className="text-xs text-gray-500 truncate max-w-xs">{img.imageUrl}</span>
                                             </div>
                                             <div className="relative pb-[56.25%] h-0">
-                                                <img 
+                                                <Image
                                                     src={img.imageUrl} 
                                                     alt={`Preview gambar ${img.order}`}
                                                     className="absolute h-full w-full object-contain"
@@ -619,7 +620,7 @@ export default function DetailKomik() {
                                                         <span>Gambar #{idx + 1}</span>
                                                                 <span className="text-xs text-gray-500 truncate max-w-xs">{cleanedUrl}</span>
                                                     </div>
-                                                    <img 
+                                                    <Image
                                                                 src={cleanedUrl}
                                                         alt={`${selectedChapter.title} - Page ${idx + 1}`}
                                                         className="w-full object-contain"
@@ -767,7 +768,7 @@ export default function DetailKomik() {
                                 <div key={chapter.id} className="bg-gray-50 rounded-xl p-4 hover:shadow-md transition-shadow duration-300 border border-gray-100">
                                     {chapter.coverImage && (
                                         <div className="relative pb-[140%] mb-4 rounded-lg overflow-hidden bg-gray-100">
-                                            <img
+                                            <Image  
                                                 src={chapter.coverImage}
                                                 alt="Cover"
                                                 className="absolute h-full w-full object-cover"

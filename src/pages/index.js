@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import Image from 'next/image';
 import {
   collection,
   getDocs,
@@ -45,6 +46,7 @@ export default function Home() {
     }, 3000);
 
     return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeIndex, popularComics.length]);
 
   const nextSlide = () => {
@@ -211,10 +213,13 @@ export default function Home() {
                     <Link key={comic.id} href={`/comics/${comic.id}`} className="min-w-full h-full relative group">
                       <div className="relative h-full overflow-hidden">
                         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent opacity-60"></div>
-                        <img
+                        <Image
                           src={comic.imageUrl || "/api/placeholder/1200/500"}
                           alt={comic.title}
                           className="w-full h-full object-cover object-center"
+                          width={1200}
+                          height={500}
+                          priority={index < 3}
                         />
                         <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6">
                           <div className="flex items-center gap-2 mb-2">
@@ -329,7 +334,7 @@ export default function Home() {
               {comics.map((comic) => (
                 <div key={comic.id} className="relative bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-purple-900/20 group">
                   <div className="relative pb-[140%]">
-                    <img
+                    <Image
                       src={comic.imageUrl || "/api/placeholder/240/340"}
                       alt={comic.title}
                       className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-300"

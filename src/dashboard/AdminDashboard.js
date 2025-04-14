@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import Image from 'next/image';
 import { db } from "../BE/firebase";
 import {
     collection,
@@ -357,10 +358,12 @@ export default function AdminDashboard() {
                                     <div className="mt-2">
                                         <p className="text-sm font-medium text-gray-700 mb-2">Preview Gambar:</p>
                                         <div className="relative w-full h-40 bg-gray-100 rounded-lg overflow-hidden">
-                                            <img
+                                            <Image
                                                 src={previewImage}
                                                 alt="Preview"
                                                 className="w-full h-full object-cover"
+                                                width={320}
+                                                height={160}
                                                 onError={() => setPreviewImage("/placeholder-image.jpg")}
                                             />
                                         </div>
@@ -490,7 +493,7 @@ export default function AdminDashboard() {
                                             {comic.details.map(detail => (
                                                 <Link key={detail.id} href={`/dashboard/${comic.id}/detailKomik/${detail.id}`} className="block h-full">
                                                     <div className="relative pb-[140%] overflow-hidden bg-gray-100">
-                                                        <img
+                                                        <Image
                                                             src={comic.imageUrl}
                                                             alt={comic.title}
                                                             className="absolute h-full w-full object-cover transition-transform duration-300 hover:scale-105"
@@ -618,7 +621,7 @@ export default function AdminDashboard() {
                                     <div className="mt-2">
                                         <p className="text-sm font-medium text-gray-700 mb-2">Preview Gambar:</p>
                                         <div className="relative w-full h-40 bg-gray-100 rounded-lg overflow-hidden">
-                                            <img
+                                            <Image
                                                 src={editImageUrl}
                                                 alt="Preview"
                                                 className="w-full h-full object-cover"

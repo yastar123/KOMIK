@@ -115,10 +115,10 @@ export default function Navbar() {
                     {/* Logo */}
                     <Link href="/" className="flex items-center gap-2 group">
                         <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-md flex items-center justify-center">
-                            <span className="text-white font-bold text-sm">SI</span>
+                            <span className="text-white font-bold text-sm">KK</span>
                         </div>
                         <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent group-hover:from-purple-300 group-hover:to-pink-300 transition-all">
-                            SHINIGAMI ID
+                            KomikKuy
                         </span>
                     </Link>
 
@@ -181,11 +181,12 @@ export default function Navbar() {
                                                     >
                                                         <div className="flex-shrink-0 w-12 h-16 bg-gray-700 rounded overflow-hidden relative">
                                                             {comic.imageUrl && (
-                                                                <img
+                                                                <Image
                                                                     src={comic.imageUrl}
                                                                     alt={comic.title}
                                                                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                                                                     loading="lazy"
+                                                                    
                                                                 />
                                                             )}
                                                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -341,11 +342,13 @@ export default function Navbar() {
                                             >
                                                 <div className="flex-shrink-0 w-14 h-20 bg-gray-700 rounded overflow-hidden relative">
                                                     {comic.imageUrl && (
-                                                        <img
+                                                        <Image
                                                             src={comic.imageUrl}
                                                             alt={comic.title}
                                                             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                                            loading="lazy"
+                                                            width={48}
+                                                            height={64}
+                                                            priority={false}
                                                         />
                                                     )}
                                                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -368,7 +371,7 @@ export default function Navbar() {
                                         <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-800/50 rounded-full mb-4">
                                             <X className="w-6 h-6 text-gray-400" />
                                         </div>
-                                        <p className="text-gray-400">Tidak ada hasil untuk "{searchTerm}"</p>
+                                        <p className="text-gray-400">Tidak ada hasil untuk {searchTerm}</p>
                                         <p className="text-gray-500 text-sm mt-1">Coba kata kunci yang berbeda</p>
                                     </div>
                                 )}

@@ -6,6 +6,7 @@ import Link from "next/link";
 import Head from "next/head";
 import { ChevronDown, Search, Grid, LayoutGrid, Download, ChevronUp, Star, Eye, BookOpen, X, Filter, Clock } from "lucide-react";
 import Layout from "../../../components/Layout";
+import Image from "next/image";
 
 const ITEMS_PER_PAGE = 15;
 
@@ -376,7 +377,7 @@ export default function ComicPaginationPage() {
                                             <div className={`relative ${viewMode === 'grid'
                                                 ? 'aspect-[3/4] rounded-t-lg overflow-hidden'
                                                 : 'h-36 w-28 flex-shrink-0'}`}>
-                                                <img
+                                                <Image
                                                     src={comic.imageUrl || '/api/placeholder/250/333'}
                                                     alt={comic.title}
                                                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"

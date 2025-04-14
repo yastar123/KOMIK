@@ -5,6 +5,7 @@ import { collection, getDocs } from "firebase/firestore";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, List } from 'lucide-react';
 import Layout from "../../../components/Layout";
+import Image from 'next/image';
 
 export default function ChapterDetail() {
     const router = useRouter();
@@ -140,7 +141,7 @@ export default function ChapterDetail() {
                     <div className="w-full md:max-w-4xl mx-auto">
                         {chapterImages.map((imageUrl, index) => (
                             <div key={index} className="relative bg-gray-800/30 overflow-hidden">
-                                <img
+                                <Image
                                     src={imageUrl}
                                     alt={`Page ${index + 1}`}
                                     className="w-full h-auto"

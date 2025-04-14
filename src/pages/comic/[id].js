@@ -1,4 +1,5 @@
 import { useRouter } from "next/router";
+import Image from 'next/image';
 import { useState, useEffect } from "react";
 import { db } from "../../BE/firebase";
 import {
@@ -125,10 +126,13 @@ export default function ComicDetail() {
                 <div className="relative">
                     <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent to-gray-900 z-10"></div>
                     <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-gray-900/90 to-transparent z-10"></div>
-                    <img
+                    <Image
                         src={comic.imageUrl || "/api/placeholder/1600/400"}
-                        className="w-full h-52  md:h-64 object-cover blur-[2px]"
+                        className="w-full h-52 md:h-64 object-cover blur-[2px]"
                         alt={comic.title}
+                        width={1600}
+                        height={400}
+                        priority
                     />
 
                     {/* Navigation buttons with enhanced hover effects */}
@@ -153,7 +157,7 @@ export default function ComicDetail() {
                         <div className="md:flex gap-6 bg-gray">
                             {/* Enhanced manga cover */}
                             <div className="md:w-36 md:h-52 w-32 h-48 mx-auto md:mx-0 rounded-lg overflow-hidden flex-shrink-0 shadow-xl border border-gray-700/50 relative flex justify-center items-center group ">
-                                <img
+                                <Image
                                     src={comic.imageUrl || "/api/placeholder/240/360"}
                                     alt={comic.title}
                                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
