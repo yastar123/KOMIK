@@ -782,6 +782,8 @@ export default function DetailKomik() {
                                                     e.target.onerror = null;
                                                     e.target.src = "https://via.placeholder.com/400x560?text=Cover+Error";
                                                 }}
+                                                width={400}
+                                                height={560}
                                             />
                                         </div>
                                     )}
