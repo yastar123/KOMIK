@@ -1,11 +1,16 @@
 import "../styles/globals.css";
 import { AuthProvider } from '../context/AuthContext';
+import Head from 'next/head';
 
 export default function App({ Component, pageProps }) {
   return (
-    <AuthProvider>
-      <meta name="google-site-verification" content="kode-verifikasi-anda" />
-      <Component {...pageProps} />
-    </AuthProvider>
+    <>
+      <Head>
+        <meta name="google-site-verification" content="l7Wm9u4AZChkT02kada1sN1bddu9oc2b1ChYD2DLmzI" />
+      </Head>
+      <AuthProvider>
+        <Component {...pageProps} />
+      </AuthProvider>
+    </>
   );
 }
