@@ -20,7 +20,6 @@ export default function DetailKomik() {
     const [chapters, setChapters] = useState([]);
     const [newChapterTitle, setNewChapterTitle] = useState("");
     const [newChapterUrl, setNewChapterUrl] = useState(""); // Keeping this for backward compatibility
-    const [newChapterCover, setNewChapterCover] = useState("");
     const [newDescription, setNewDescription] = useState("");
     
     // For bulk image URL input
@@ -217,14 +216,12 @@ export default function DetailKomik() {
             await addDoc(collection(db, "comics", comicId, "detailKomik", detailId, "chapters"), {
                 title: `${nextChapterNumber}`, // Always use the next chapter number as title
                 url: imagesArray[0]?.imageUrl || "", // Keep first URL for backward compatibility
-                coverImage: newChapterCover || imagesArray[0]?.imageUrl || "",
                 timestamp: Timestamp.now(),
                 images: imagesArray, // Store the array of image objects with order
             });
             
             setNewChapterTitle("");
             setNewChapterUrl("");
-            setNewChapterCover("");
             setChapterImagesText("");
             setIsPreviewingNewImages(false);
             setParsedImageUrls([]);
@@ -850,20 +847,6 @@ export default function DetailKomik() {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">URL Cover Image</label>
-                            <input
-                                type="text"
-                                placeholder="Masukkan URL cover image"
-                                value={newChapterCover}
-                                onChange={(e) => setNewChapterCover(e.target.value)}
-                                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                            />
-                            <p className="mt-1 text-xs text-gray-500">
-                                *Jika kosong, gambar pertama akan digunakan sebagai cover
-                            </p>
-                        </div>
-                        
-                        <div>
                             <div className="flex justify-between items-center mb-2">
                                 <label className="block text-sm font-medium text-gray-700">URL Gambar (Input Massal)</label>
                                 <span className="text-xs text-gray-500">
@@ -929,11 +912,6 @@ export default function DetailKomik() {
                                                 return;
                                             }
 
-                                            // Set URL ke-4 sebagai cover chapter
-                                            if (uniqueUrls.length >= 4) {
-                                                setNewChapterCover(uniqueUrls[3]);
-                                            }
-
                                             setChapterImagesText(uniqueUrls.join('\n'));
                                             setUrlValidationStatus({
                                                 isValid: true,
@@ -958,7 +936,7 @@ export default function DetailKomik() {
                                         hover:file:bg-blue-100"
                                 />
 
-                                <div className="bg-gray-50 p-4 rounded-lg">
+                                <div className="bg-gray-50 p-4 rounded-lg overflow-y-auto">
                                     <h4 className="text-sm font-medium text-gray-700 mb-2">URL yang Terdeteksi:</h4>
                                     <pre className="text-sm text-gray-600 whitespace-pre-wrap break-all">
                                         {chapterImagesText}
@@ -977,7 +955,6 @@ export default function DetailKomik() {
                                     onClick={() => {
                                         // Clear the form
                                         setNewChapterTitle("");
-                                        setNewChapterCover("");
                                         setChapterImagesText("");
                                         setUrlValidationStatus({
                                             isValid: true,
