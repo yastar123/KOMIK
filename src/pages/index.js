@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { GetServerSideProps } from 'next';
 import Image from 'next/image';
 import {
@@ -54,120 +54,167 @@ const serializeData = (obj) => {
   return obj;
 };
 
+// Helper function to format time distance
+const formatTimeDistance = (timestamp) => {
+  return formatDistanceToNow(
+    new Date(timestamp.seconds * 1000),
+    { locale: id }
+  )
+    .replace("sekitar ", "")
+    .replace(" hari", "h")
+    .replace(" jam", "j") + " lalu";
+};
+
 export const getServerSideProps = async () => {
-  // Fetch all comics and their chapters
-  const querySnapshot = await getDocs(collection(db, "comics"));
-  const comicsData = [];
-  const genreSet = new Set();
+  try {
+    // Parallel data fetching for improved performance
+    const [comicsSnapshot, popularSnapshot] = await Promise.all([
+      getDocs(collection(db, "comics")),
+      getDocs(query(
+        collection(db, "comics"),
+        orderBy("weeklyViews", "desc"),
+        limit(10)
+      ))
+    ]);
 
-  for (const docSnap of querySnapshot.docs) {
-    const comicData = { id: docSnap.id, ...serializeData(docSnap.data()) };
+    const comicsData = [];
+    const genreSet = new Set();
+    const comicPromises = [];
 
-    if (comicData.genres && Array.isArray(comicData.genres)) {
-      comicData.genres.forEach((genre) => genreSet.add(genre));
-    }
+    // Prepare all promises for chapter fetching
+    for (const docSnap of comicsSnapshot.docs) {
+      const comicData = { id: docSnap.id, ...serializeData(docSnap.data()) };
 
-    const detailRef = collection(db, "comics", docSnap.id, "detailKomik");
-    const detailSnapshot = await getDocs(detailRef);
+      if (comicData.genres && Array.isArray(comicData.genres)) {
+        comicData.genres.forEach((genre) => genreSet.add(genre));
+      }
 
-    if (!detailSnapshot.empty) {
-      const firstDetail = detailSnapshot.docs[0];
+      comicPromises.push((async () => {
+        const detailRef = collection(db, "comics", docSnap.id, "detailKomik");
+        const detailSnapshot = await getDocs(detailRef);
 
-      const chaptersCollection = collection(
-        db,
-        "comics",
-        docSnap.id,
-        "detailKomik",
-        firstDetail.id,
-        "chapters"
-      );
+        if (!detailSnapshot.empty) {
+          const firstDetail = detailSnapshot.docs[0];
+          const chaptersCollection = collection(
+            db,
+            "comics",
+            docSnap.id,
+            "detailKomik",
+            firstDetail.id,
+            "chapters"
+          );
 
-      const chaptersSnapshot = await getDocs(chaptersCollection);
+          const chaptersSnapshot = await getDocs(chaptersCollection);
 
-      const latestChapters = chaptersSnapshot.docs
-        .map((doc) => {
-          const data = doc.data();
-          const timestamp = data.timestamp ? {
-            seconds: data.timestamp.seconds || 0,
-            nanoseconds: data.timestamp.nanoseconds || 0
-          } : null;
+          const latestChapters = chaptersSnapshot.docs
+            .map((doc) => {
+              const data = doc.data();
+              const timestamp = data.timestamp ? {
+                seconds: data.timestamp.seconds || 0,
+                nanoseconds: data.timestamp.nanoseconds || 0
+              } : null;
+              return {
+                id: doc.id,
+                ...serializeData(data),
+                timestamp
+              };
+            })
+            .filter((c) => c.timestamp)
+            .sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0))
+            .slice(0, 3);
+
           return {
-            id: doc.id,
-            ...serializeData(data),
-            timestamp
+            ...comicData,
+            latestChapters,
+            latestUpdate: latestChapters[0]?.timestamp?.seconds || 0
           };
-        })
-        .filter((c) => c.timestamp)
-        .sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0))
-        .slice(0, 3);
-
-      if (latestChapters.length > 0) {
-        comicsData.push({
-          ...comicData,
-          latestChapters,
-          latestUpdate: latestChapters[0]?.timestamp?.seconds || 0
-        });
-      } else {
-        comicsData.push({
+        }
+        
+        return {
           ...comicData,
           latestChapters: [],
           latestUpdate: 0
-        });
-      }
-    } else {
-      comicsData.push({
-        ...comicData,
-        latestChapters: [],
-        latestUpdate: 0
-      });
+        };
+      })());
     }
+
+    // Wait for all comic data to be processed
+    const processedComics = await Promise.all(comicPromises);
+    comicsData.push(...processedComics);
+
+    // Sort comics by latest chapter update
+    const sortedComics = comicsData.sort((a, b) => (b.latestUpdate || 0) - (a.latestUpdate || 0));
+    const initialComics = sortedComics.slice(0, 10);
+    const initialGenres = Array.from(genreSet);
+
+    // Process popular comics
+    const initialPopularComics = popularSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...serializeData(doc.data() || {}),
+    }));
+
+    // Serialize all data before returning
+    return {
+      props: {
+        initialComics: serializeData(initialComics),
+        initialGenres: Array.from(initialGenres),
+        initialPopularComics: serializeData(initialPopularComics),
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    return {
+      props: {
+        initialComics: [],
+        initialGenres: [],
+        initialPopularComics: [],
+        error: "Failed to load data"
+      }
+    };
   }
-
-  // Sort comics by latest chapter update
-  const sortedComics = comicsData.sort((a, b) => (b.latestUpdate || 0) - (a.latestUpdate || 0));
-  const initialComics = sortedComics.slice(0, 10);
-  const initialGenres = Array.from(genreSet);
-
-  // Fetch popular comics (initially weekly)
-  const q = query(
-    collection(db, "comics"),
-    orderBy("weeklyViews", "desc"),
-    limit(10)
-  );
-
-  const popularSnapshot = await getDocs(q);
-  const initialPopularComics = popularSnapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...serializeData(doc.data() || {}),
-  }));
-
-  // Serialize all data before returning
-  return {
-    props: {
-      initialComics: serializeData(initialComics),
-      initialGenres: Array.from(initialGenres),
-      initialPopularComics: serializeData(initialPopularComics),
-    },
-  };
 };
 
-export default function Home({ initialComics, initialGenres, initialPopularComics }) {
+// Memoized formatNumber function to avoid unnecessary recalculations
+const formatNumber = (num) => {
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1) + 'M';
+  } else if (num >= 1000) {
+    return (num / 1000).toFixed(1) + 'K';
+  }
+  return num.toString();
+};
+
+export default function Home({ initialComics, initialGenres, initialPopularComics, error }) {
   const [comics, setComics] = useState(initialComics);
-  const [genres, setGenres] = useState(initialGenres);
+  const [genres] = useState(initialGenres); // No need to set genres after initialization
   const [popularComics, setPopularComics] = useState(initialPopularComics);
   const [viewType, setViewType] = useState("weekly");
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isScrollingPaused, setIsScrollingPaused] = useState(false);
   const carouselRef = useRef(null);
+  const intervalRef = useRef(null);
 
-  // Auto-scroll carousel every 3 seconds
+  // Memoize expensive computations
+  const displayedComics = useMemo(() => comics.slice(0, 4), [comics]);
+
+  // Auto-scroll carousel with improved handling
   useEffect(() => {
-    const interval = setInterval(() => {
-      nextSlide();
+    if (isScrollingPaused || popularComics.length === 0) return;
+    
+    intervalRef.current = setInterval(() => {
+      setActiveIndex((prev) => (prev === popularComics.length - 1 ? 0 : prev + 1));
     }, 3000);
 
-    return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeIndex, popularComics.length]);
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [activeIndex, popularComics.length, isScrollingPaused]);
+
+  // Pause auto-scrolling when hovering over carousel
+  const pauseScrolling = () => setIsScrollingPaused(true);
+  const resumeScrolling = () => setIsScrollingPaused(false);
 
   const nextSlide = () => {
     if (popularComics.length === 0) return;
@@ -183,39 +230,65 @@ export default function Home({ initialComics, initialGenres, initialPopularComic
     setActiveIndex(index);
   };
 
-  const formatNumber = (num) => {
-    if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + 'M';
-    } else if (num >= 1000) {
-      return (num / 1000).toFixed(1) + 'K';
-    }
-    return num.toString();
-  };
-
-  // Update popular comics when viewType changes
+  // Update popular comics when viewType changes with debounce
   useEffect(() => {
     const fetchPopularComics = async () => {
-      let orderField = "weeklyViews";
-      if (viewType === "daily") orderField = "dailyViews";
-      if (viewType === "all") orderField = "views";
+      try {
+        let orderField = "weeklyViews";
+        if (viewType === "daily") orderField = "dailyViews";
+        if (viewType === "all") orderField = "views";
 
-      const q = query(
-        collection(db, "comics"),
-        orderBy(orderField, "desc"),
-        limit(10)
-      );
+        const q = query(
+          collection(db, "comics"),
+          orderBy(orderField, "desc"),
+          limit(10)
+        );
 
-      const querySnapshot = await getDocs(q);
-      const topComics = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+        const querySnapshot = await getDocs(q);
+        const topComics = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
 
-      setPopularComics(topComics);
+        setPopularComics(topComics);
+      } catch (error) {
+        console.error("Error fetching popular comics:", error);
+      }
     };
 
-    fetchPopularComics();
+    // Add debounce to prevent excessive calls
+    const timerId = setTimeout(() => {
+      fetchPopularComics();
+    }, 300);
+
+    return () => clearTimeout(timerId);
   }, [viewType]);
+
+  // Function to format time distance
+  const formatTimeDistance = (timestamp) => {
+    if (!timestamp) return '';
+    return formatDistanceToNow(
+      new Date(timestamp.seconds * 1000),
+      { locale: id }
+    )
+      .replace("sekitar ", "")
+      .replace(" hari", "h")
+      .replace(" jam", "j") + " lalu";
+  };
+
+  // Early error handling
+  if (error) {
+    return (
+      <Layout>
+        <div className="bg-gray-900 text-white min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold">Failed to load comics</h1>
+            <p className="mt-2">Please try again later</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -251,8 +324,12 @@ export default function Home({ initialComics, initialGenres, initialPopularComic
               </div>
             </div>
 
-            {/* Carousel Container */}
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl mb-8">
+            {/* Carousel Container with hover pause */}
+            <div 
+              className="relative rounded-2xl overflow-hidden shadow-2xl mb-8"
+              onMouseEnter={pauseScrolling}
+              onMouseLeave={resumeScrolling}
+            >
               <div ref={carouselRef} className="relative overflow-hidden h-64 md:h-80 lg:h-96 rounded-xl">
                 <div
                   className="flex transition-transform duration-500 ease-out h-full"
@@ -268,7 +345,8 @@ export default function Home({ initialComics, initialGenres, initialPopularComic
                           className="w-full h-full object-cover object-center"
                           width={1200}
                           height={500}
-                          priority={index < 3}
+                          priority={index === activeIndex}
+                          loading={index === activeIndex ? "eager" : "lazy"}
                         />
                         <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6">
                           <div className="flex items-center gap-2 mb-2">
@@ -348,8 +426,12 @@ export default function Home({ initialComics, initialGenres, initialPopularComic
             </h2>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6 mb-8">
-              {comics.slice(0, 4).map((comic) => (
-                <div key={comic.id} className="relative bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-purple-900/20 group">
+              {displayedComics.map((comic) => (
+                <Link
+                  href={`/comic/${comic.id}`}
+                  key={comic.id}
+                  className="block relative bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-purple-900/20 group"
+                >
                   <div className="relative pb-[140%]">
                     <Image
                       src={comic.imageUrl || "/api/placeholder/240/340"}
@@ -405,10 +487,9 @@ export default function Home({ initialComics, initialGenres, initialPopularComic
                     {comic.latestChapters?.length > 0 && (
                       <div className="space-y-1.5 mb-3">
                         {comic.latestChapters.slice(0, 2).map((chapter) => (
-                          <Link
-                            key={chapter.id}
-                            href={`/comic/${comic.id}/${chapter.id}`}
-                            className="flex items-center justify-between text-xs hover:bg-gray-700/50 rounded px-1.5 py-1 transition"
+                          <div key={chapter.id} 
+                            onClick={() => window.location.href = `/comic/${comic.id}/${chapter.id}`}
+                            className="flex items-center justify-between text-xs hover:bg-gray-700/50 rounded px-1.5 py-1 transition cursor-pointer"
                           >
                             <span className="font-medium truncate">
                               Ch {chapter.title || chapter.chapter}
@@ -416,29 +497,19 @@ export default function Home({ initialComics, initialGenres, initialPopularComic
                             {chapter.timestamp && (
                               <span className="flex items-center text-gray-400 shrink-0">
                                 <Clock className="w-3 h-3 mr-1" />
-                                {formatDistanceToNow(
-                                  new Date(chapter.timestamp.seconds * 1000),
-                                  { locale: id }
-                                )
-                                  .replace("sekitar ", "")
-                                  .replace(" hari", "h")
-                                  .replace(" jam", "j")}{" "}
-                                lalu
+                                {formatTimeDistance(chapter.timestamp)}
                               </span>
                             )}
-                          </Link>
+                          </div>
                         ))}
                       </div>
                     )}
 
-                    <Link
-                      href={`/comic/${comic.id}`}
-                      className="block w-full text-center bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white text-xs font-medium rounded py-1.5 transition-colors"
-                    >
+                    <div className="w-full text-center bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white text-xs font-medium rounded py-1.5 transition-colors">
                       Baca Sekarang
-                    </Link>
+                    </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
 
@@ -475,13 +546,8 @@ export default function Home({ initialComics, initialGenres, initialPopularComic
           </section>
         </main>
 
-        {/* Back to Top Button */}
-        <button
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-6 right-6 w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 rounded-full flex items-center justify-center text-white shadow-lg"
-        >
-          <ArrowUp className="w-5 h-5" />
-        </button>
+        {/* Back to Top Button - Add Intersection Observer */}
+        <BackToTopButton />
 
         {/* Custom Scrollbar Styling */}
         <style jsx global>{`
@@ -502,5 +568,45 @@ export default function Home({ initialComics, initialGenres, initialPopularComic
         `}</style>
       </div>
     </Layout>
+  );
+}
+
+// Separate component for Back to Top button with Intersection Observer
+function BackToTopButton() {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // Show button when user scrolls down 300px
+        setIsVisible(!entry.isIntersecting);
+      },
+      { rootMargin: "-300px 0px 0px 0px" }
+    );
+
+    const target = document.getElementById("top-observer");
+    if (target) observer.observe(target);
+
+    return () => {
+      if (target) observer.unobserve(target);
+    };
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  if (!isVisible) return <div id="top-observer" className="absolute top-0" />;
+
+  return (
+    <>
+      <div id="top-observer" className="absolute top-0" />
+      <button
+        onClick={scrollToTop}
+        className="fixed bottom-6 right-6 w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 rounded-full flex items-center justify-center text-white shadow-lg z-10 transform transition-transform hover:scale-110"
+      >
+        <ArrowUp className="w-5 h-5" />
+      </button>
+    </>
   );
 }
