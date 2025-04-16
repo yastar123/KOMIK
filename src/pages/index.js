@@ -12,20 +12,20 @@ import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { id } from "date-fns/locale";
 import Layout from "../components/Layout";
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  Bookmark, 
-  Star, 
-  Clock, 
-  Eye, 
-  Fire, 
-  Book, 
-  Calendar, 
-  TrendingUp, 
-  ArrowRight, 
-  Filter, 
-  Search, 
+import {
+  ChevronLeft,
+  ChevronRight,
+  Bookmark,
+  Star,
+  Clock,
+  Eye,
+  Fire,
+  Book,
+  Calendar,
+  TrendingUp,
+  ArrowRight,
+  Filter,
+  Search,
   Menu,
   ArrowUp
 } from "lucide-react";
@@ -46,7 +46,7 @@ export default function Home() {
     }, 3000);
 
     return () => clearInterval(interval);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeIndex, popularComics.length]);
 
   const nextSlide = () => {
@@ -167,7 +167,7 @@ export default function Home() {
 
     fetchPopularComics();
   }, [viewType]);
-  
+
   return (
     <Layout>
       <div className="bg-gray-900 text-white min-h-screen">
@@ -181,20 +181,20 @@ export default function Home() {
               </h2>
 
               <div className="flex bg-gray-800 rounded-full p-1">
-                <button 
-                  onClick={() => setViewType("daily")} 
+                <button
+                  onClick={() => setViewType("daily")}
                   className={`px-3 py-1 text-xs md:text-sm rounded-full transition ${viewType === "daily" ? "bg-purple-500 text-white" : "text-gray-300 hover:text-white"}`}
                 >
                   Harian
                 </button>
-                <button 
-                  onClick={() => setViewType("weekly")} 
+                <button
+                  onClick={() => setViewType("weekly")}
                   className={`px-3 py-1 text-xs md:text-sm rounded-full transition ${viewType === "weekly" ? "bg-purple-500 text-white" : "text-gray-300 hover:text-white"}`}
                 >
                   Mingguan
                 </button>
-                <button 
-                  onClick={() => setViewType("all")} 
+                <button
+                  onClick={() => setViewType("all")}
                   className={`px-3 py-1 text-xs md:text-sm rounded-full transition ${viewType === "all" ? "bg-purple-500 text-white" : "text-gray-300 hover:text-white"}`}
                 >
                   Semua
@@ -205,12 +205,12 @@ export default function Home() {
             {/* Carousel Container */}
             <div className="relative rounded-2xl overflow-hidden shadow-2xl mb-8">
               <div ref={carouselRef} className="relative overflow-hidden h-64 md:h-80 lg:h-96 rounded-xl">
-                <div 
+                <div
                   className="flex transition-transform duration-500 ease-out h-full"
                   style={{ transform: `translateX(-${activeIndex * 100}%)` }}
                 >
                   {popularComics.map((comic, index) => (
-                    <Link key={comic.id} href={`/comics/${comic.id}`} className="min-w-full h-full relative group">
+                    <Link key={comic.id} href={`/comic/${comic.id}`} className="min-w-full h-full relative group">
                       <div className="relative h-full overflow-hidden">
                         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent opacity-60"></div>
                         <Image
@@ -231,37 +231,6 @@ export default function Home() {
 
                           {comic.description && <p className="text-gray-200 mb-4 text-sm md:text-base line-clamp-2">{comic.description}</p>}
 
-                          <div className="mb-4 flex flex-col gap-2">
-                            {comic.latestChapters?.length > 0 ? (
-                              comic.latestChapters.slice(0, 2).map((chapter) => (
-                                <Link
-                                  key={chapter.id}
-                                  href={`/comic/${comic.id}/${chapter.id}`}
-                                  className="flex items-center justify-between bg-gray-800/80 hover:bg-gray-700/80 rounded px-3 py-1 text-sm transition"
-                                >
-                                  <span className="font-medium">
-                                    Ch {chapter.title || chapter.chapter}
-                                  </span>
-                                  {chapter.timestamp && (
-                                    <span className="flex items-center text-gray-300 text-xs">
-                                      <Clock className="w-3 h-3 mr-1" />
-                                      {formatDistanceToNow(
-                                        new Date(chapter.timestamp.seconds * 1000),
-                                        { locale: id }
-                                      )
-                                        .replace("sekitar ", "")
-                                        .replace(" hari", "h")
-                                        .replace(" jam", "j")}{" "}
-                                      lalu
-                                    </span>
-                                  )}
-                                </Link>
-                              ))
-                            ) : (
-                              <p className="text-gray-400 text-sm">Belum ada chapter.</p>
-                            )}
-                          </div>
-
                           <div className="flex items-center justify-between">
                             <div className="flex items-center text-amber-400">
                               <Eye className="w-4 h-4 mr-1" />
@@ -270,8 +239,8 @@ export default function Home() {
                                   viewType === "daily"
                                     ? comic.dailyViews || 0
                                     : viewType === "weekly"
-                                    ? comic.weeklyViews || 0
-                                    : comic.views || 0
+                                      ? comic.weeklyViews || 0
+                                      : comic.views || 0
                                 )}{" "}
                                 views
                               </span>
@@ -289,7 +258,7 @@ export default function Home() {
               </div>
 
               {/* Carousel Controls */}
-              <button 
+              <button
                 onClick={prevSlide}
                 className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 md:w-10 md:h-10 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-colors"
                 aria-label="Previous slide"
@@ -297,7 +266,7 @@ export default function Home() {
                 <ChevronLeft className="w-5 h-5" />
               </button>
 
-              <button 
+              <button
                 onClick={nextSlide}
                 className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 md:w-10 md:h-10 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-colors"
                 aria-label="Next slide"
@@ -312,9 +281,8 @@ export default function Home() {
                     key={index}
                     onClick={() => goToSlide(index)}
                     aria-label={`Go to slide ${index + 1}`}
-                    className={`w-2 h-2 md:w-3 md:h-3 rounded-full transition-all ${
-                      activeIndex === index ? "bg-purple-500 scale-110" : "bg-gray-400/60 hover:bg-gray-300/60"
-                    }`}
+                    className={`w-2 h-2 md:w-3 md:h-3 rounded-full transition-all ${activeIndex === index ? "bg-purple-500 scale-110" : "bg-gray-400/60 hover:bg-gray-300/60"
+                      }`}
                   />
                 ))}
               </div>
@@ -367,8 +335,8 @@ export default function Home() {
                               viewType === "daily"
                                 ? comic.dailyViews || 0
                                 : viewType === "weekly"
-                                ? comic.weeklyViews || 0
-                                : comic.views || 0
+                                  ? comic.weeklyViews || 0
+                                  : comic.views || 0
                             )}
                           </span>
                         </div>
@@ -394,8 +362,8 @@ export default function Home() {
                     {comic.latestChapters?.length > 0 && (
                       <div className="space-y-1.5 mb-3">
                         {comic.latestChapters.slice(0, 2).map((chapter) => (
-                          <Link 
-                            key={chapter.id} 
+                          <Link
+                            key={chapter.id}
                             href={`/comic/${comic.id}/${chapter.id}`}
                             className="flex items-center justify-between text-xs hover:bg-gray-700/50 rounded px-1.5 py-1 transition"
                           >
@@ -420,7 +388,7 @@ export default function Home() {
                       </div>
                     )}
 
-                    <Link 
+                    <Link
                       href={`/comic/${comic.id}`}
                       className="block w-full text-center bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white text-xs font-medium rounded py-1.5 transition-colors"
                     >
@@ -433,7 +401,7 @@ export default function Home() {
 
             {/* View More Link */}
             <div className="mt-6">
-              <Link 
+              <Link
                 href="/comic/page/1"
                 className="flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg py-3 transition-colors shadow"
               >
@@ -451,7 +419,7 @@ export default function Home() {
               <div className="flex flex-wrap gap-2">
                 {genres.map((genre) => (
                   <div key={genre} className="bg-gray-700 hover:bg-gradient-to-r hover:from-purple-500 hover:to-pink-500 rounded-full transition-colors">
-                    <Link 
+                    <Link
                       href={`/genre/${genre.toLowerCase()}`}
                       className="block px-3 py-1.5 text-sm"
                     >
@@ -465,7 +433,7 @@ export default function Home() {
         </main>
 
         {/* Back to Top Button */}
-        <button 
+        <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           className="fixed bottom-6 right-6 w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 rounded-full flex items-center justify-center text-white shadow-lg"
         >
