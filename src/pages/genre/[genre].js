@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ChevronDown, Search, Grid, LayoutGrid, Download, ChevronUp, Star, Eye, BookOpen, X, Filter } from "lucide-react";
 import Layout from "../../components/Layout";
 import Image from "next/image";
+import Head from "next/head";
 
 export default function GenrePage() {
     const router = useRouter();
@@ -92,11 +93,11 @@ export default function GenrePage() {
                 comic.title?.toLowerCase().includes(searchTerm.toLowerCase())
             );
         }
-        
+
         // Apply sorting to filtered results
         const sortedResults = sortComics(filtered, sortOption);
         setFilteredComics(sortedResults);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchTerm, komikList]);
 
     const handleFilterChange = (value, type) => {
@@ -121,6 +122,10 @@ export default function GenrePage() {
 
     return (
         <Layout>
+            <Head>
+                <meta name="description" content="Temukan komik berdasarkan genre favoritmu. Koleksi komik terlengkap dengan filter genre, tipe, dan status!" />
+                <title>{genre ? `${genre} - Komik Terpopuler` : 'Semua Genre Komik'}</title>
+            </Head>
             <div className="min-h-screen bg-gray-900/50  text-white">
                 <main className="container mx-auto px-4 py-8">
                     <div className="flex flex-col md:flex-row gap-8">
@@ -248,41 +253,41 @@ export default function GenrePage() {
                                         {isDropdownOpen && (
                                             <div className="absolute z-50 top-full right-0 mt-1 w-full bg-gray-800/95 backdrop-blur-sm rounded-lg shadow-lg border border-gray-700/50 animate-fadeIn">
                                                 <div className="relative z-50">
-                                                <ul>
-                                                    <li
-                                                        className="px-4 py-2 hover:bg-purple-500/20 cursor-pointer transition-colors duration-300"
-                                                        onClick={() => {
-                                                            setSortOption('Popularitas');
-                                                            setIsDropdownOpen(false);
-                                                            const sorted = sortComics(filteredComics, 'Popularitas');
-                                                            setFilteredComics(sorted);
-                                                        }}
-                                                    >
-                                                        Popularitas
-                                                    </li>
-                                                    <li
-                                                        className="px-4 py-2 hover:bg-purple-500/20 cursor-pointer transition-colors duration-300"
-                                                        onClick={() => {
-                                                            setSortOption('Terbaru');
-                                                            setIsDropdownOpen(false);
-                                                            const sorted = sortComics(filteredComics, 'Terbaru');
-                                                            setFilteredComics(sorted);
-                                                        }}
-                                                    >
-                                                        Terbaru
-                                                    </li>
-                                                    <li
-                                                        className="px-4 py-2 hover:bg-purple-500/20 cursor-pointer transition-colors duration-300"
-                                                        onClick={() => {
-                                                            setSortOption('A-Z');
-                                                            setIsDropdownOpen(false);
-                                                            const sorted = sortComics(filteredComics, 'A-Z');
-                                                            setFilteredComics(sorted);
-                                                        }}
-                                                    >
-                                                        A-Z
-                                                    </li>
-                                                </ul>
+                                                    <ul>
+                                                        <li
+                                                            className="px-4 py-2 hover:bg-purple-500/20 cursor-pointer transition-colors duration-300"
+                                                            onClick={() => {
+                                                                setSortOption('Popularitas');
+                                                                setIsDropdownOpen(false);
+                                                                const sorted = sortComics(filteredComics, 'Popularitas');
+                                                                setFilteredComics(sorted);
+                                                            }}
+                                                        >
+                                                            Popularitas
+                                                        </li>
+                                                        <li
+                                                            className="px-4 py-2 hover:bg-purple-500/20 cursor-pointer transition-colors duration-300"
+                                                            onClick={() => {
+                                                                setSortOption('Terbaru');
+                                                                setIsDropdownOpen(false);
+                                                                const sorted = sortComics(filteredComics, 'Terbaru');
+                                                                setFilteredComics(sorted);
+                                                            }}
+                                                        >
+                                                            Terbaru
+                                                        </li>
+                                                        <li
+                                                            className="px-4 py-2 hover:bg-purple-500/20 cursor-pointer transition-colors duration-300"
+                                                            onClick={() => {
+                                                                setSortOption('A-Z');
+                                                                setIsDropdownOpen(false);
+                                                                const sorted = sortComics(filteredComics, 'A-Z');
+                                                                setFilteredComics(sorted);
+                                                            }}
+                                                        >
+                                                            A-Z
+                                                        </li>
+                                                    </ul>
                                                 </div>
                                             </div>
                                         )}

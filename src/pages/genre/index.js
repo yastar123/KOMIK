@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ChevronDown, Search, Grid, LayoutGrid, Download, ChevronUp, Star, Eye, BookOpen, X, Filter, Clock } from "lucide-react";
 import Layout from "../../components/Layout";
 import Image from "next/image";
+import Head from "next/head";
 
 export default function GenrePage() {
     const router = useRouter();
@@ -128,6 +129,10 @@ export default function GenrePage() {
     if (error) {
         return (
             <Layout>
+                <Head>
+                <meta name="description" content="Temukan komik berdasarkan genre favoritmu. Koleksi komik terlengkap dengan filter genre, tipe, dan status!" />
+                <title>{genre ? `${genre} - Komik Terpopuler` : 'Semua Genre Komik'}</title>
+                </Head>
                 <div className="flex items-center justify-center h-screen">
                     <div className="text-center p-8 bg-gray-800/50   backdrop-blur-sm rounded-lg border border-red-500/50">
                         <X className="w-12 h-12 text-red-500 mx-auto mb-4" />

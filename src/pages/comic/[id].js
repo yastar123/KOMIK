@@ -14,6 +14,7 @@ import {
 import Link from "next/link";
 import { Play, Bookmark, ListPlus, Star, Eye, MessageSquare, ChevronLeft, Search, Info, FileText, List, ChevronDown, Home, Clock, ChevronRight } from "lucide-react";
 import Layout from "../../components/Layout";
+import Head from 'next/head';
 
 export default function ComicDetail() {
     const router = useRouter();
@@ -123,6 +124,20 @@ export default function ComicDetail() {
         <Layout>
             <div className="flex flex-col min-h-screen bg-gray-900/50 text-white overflow-hidden">
                 {/* Header with enhanced blur and gradient */}
+                <Head>
+                    <title>{comic.title} - Baca Komik {comic.type || 'Online'} | KomikKuy</title>
+                    <meta name="description" content={comic.description?.slice(0, 150) || `Baca ${comic.title} hanya di KomikKuy. Update terbaru tersedia!`} />
+                    <meta property="og:title" content={`${comic.title} - KomikKuy`} />
+                    <meta property="og:description" content={comic.description?.slice(0, 150) || `Baca ${comic.title} hanya di KomikKuy`} />
+                    <meta property="og:image" content={comic.imageUrl} />
+                    <meta property="og:type" content="website" />
+                    <meta property="og:url" content={`https://komikkuy.my.id/comic/${id}`} />
+                    <meta name="twitter:card" content="summary_large_image" />
+                    <meta name="twitter:title" content={`${comic.title} - KomikKuy`} />
+                    <meta name="twitter:description" content={comic.description?.slice(0, 150)} />
+                    <meta name="twitter:image" content={comic.imageUrl} />
+                </Head>
+
                 <div className="relative">
                     <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent to-gray-900 z-10"></div>
                     <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-gray-900/90 to-transparent z-10"></div>
@@ -224,8 +239,8 @@ export default function ComicDetail() {
                             <p className="text-sm text-gray-300">
                                 {isExpanded ? comic.description : `${comic.description?.slice(0, 250)}${comic.description?.length > 250 ? '...' : ''}`}
                                 {comic.description?.length > 250 && (
-                                    <span 
-                                        onClick={() => setIsExpanded(!isExpanded)} 
+                                    <span
+                                        onClick={() => setIsExpanded(!isExpanded)}
                                         className="text-purple-400 cursor-pointer ml-1 hover:text-purple-300 transition-colors"
                                     >
                                         {isExpanded ? 'Show Less' : 'Read More'}
@@ -345,8 +360,8 @@ export default function ComicDetail() {
                             {filteredChapters.length > 0 ? (
                                 <div className="space-y-2">
                                     {filteredChapters.map((chapter) => (
-                                        <Link 
-                                            key={chapter.id} 
+                                        <Link
+                                            key={chapter.id}
                                             href={`/comic/${id}/${chapter.id}`}
                                         >
                                             <div className="group bg-gray-900/50 hover:bg-gray-800/70 backdrop-blur-md border border-gray-700/50 rounded-lg overflow-hidden transition-all duration-300 hover:border-purple-500/50 hover:shadow-lg hover:shadow-purple-500/10">
@@ -365,7 +380,7 @@ export default function ComicDetail() {
                                                                 {chapter.timestamp ? formatTimestamp(chapter.timestamp) : "Unknown date"}
                                                             </p>
                                                         </div>
-                                                       
+
                                                     </div>
                                                 </div>
                                             </div>

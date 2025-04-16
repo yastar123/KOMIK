@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { GetServerSideProps } from 'next';
+import Head from 'next/head';
 import Image from 'next/image';
 import {
   collection,
@@ -129,7 +130,7 @@ export const getServerSideProps = async () => {
             latestUpdate: latestChapters[0]?.timestamp?.seconds || 0
           };
         }
-        
+
         return {
           ...comicData,
           latestChapters: [],
@@ -200,7 +201,7 @@ export default function Home({ initialComics, initialGenres, initialPopularComic
   // Auto-scroll carousel with improved handling
   useEffect(() => {
     if (isScrollingPaused || popularComics.length === 0) return;
-    
+
     intervalRef.current = setInterval(() => {
       setActiveIndex((prev) => (prev === popularComics.length - 1 ? 0 : prev + 1));
     }, 3000);
@@ -294,6 +295,15 @@ export default function Home({ initialComics, initialGenres, initialPopularComic
     <Layout>
       <div className="bg-gray-900 text-white min-h-screen">
         {/* Hero Section with Carousel */}
+        <Head>
+          <title>Komikkuy - Baca Komik Online Bahasa Indonesia</title>
+          <meta name="description" content="Baca komik manga, manhwa, dan manhua terbaru di Komikkuy secara gratis dengan update tiap hari!" />
+          <meta name="keywords" content="baca komik, komik online, manga, manhwa, manhua, komik bahasa indonesia" />
+          <meta name="robots" content="index, follow" />
+          <meta property="og:title" content="Komikkuy - Baca Komik Online Bahasa Indonesia" />
+          <meta property="og:description" content="Baca komik manga, manhwa, dan manhua terbaru di Komikkuy secara gratis dengan update tiap hari!" />
+          <meta property="og:type" content="website" />
+        </Head>
         <div className="relative overflow-hidden bg-gradient-to-b from-gray-900 to-gray-900 py-6 px-4 md:py-12 lg:px-8 border-b border-gray-800">
           <div className="container mx-auto">
             <div className="flex items-center justify-between mb-6">
@@ -325,7 +335,7 @@ export default function Home({ initialComics, initialGenres, initialPopularComic
             </div>
 
             {/* Carousel Container with hover pause */}
-            <div 
+            <div
               className="relative rounded-2xl overflow-hidden shadow-2xl mb-8"
               onMouseEnter={pauseScrolling}
               onMouseLeave={resumeScrolling}
@@ -487,7 +497,7 @@ export default function Home({ initialComics, initialGenres, initialPopularComic
                     {comic.latestChapters?.length > 0 && (
                       <div className="space-y-1.5 mb-3">
                         {comic.latestChapters.slice(0, 2).map((chapter) => (
-                          <div key={chapter.id} 
+                          <div key={chapter.id}
                             onClick={() => window.location.href = `/comic/${comic.id}/${chapter.id}`}
                             className="flex items-center justify-between text-xs hover:bg-gray-700/50 rounded px-1.5 py-1 transition cursor-pointer"
                           >
