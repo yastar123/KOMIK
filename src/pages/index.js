@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { GetServerSideProps } from 'next';
 import Image from 'next/image';
 import {
   collection,
@@ -19,27 +20,146 @@ import {
   Star,
   Clock,
   Eye,
-  Fire,
   Book,
-  Calendar,
-  TrendingUp,
-  ArrowRight,
   Filter,
-  Search,
-  Menu,
+  ArrowRight,
   ArrowUp
 } from "lucide-react";
 
-export default function Home() {
-  const [comics, setComics] = useState([]);
-  const [genres, setGenres] = useState([]);
-  const [popularComics, setPopularComics] = useState([]);
+// Helper function to serialize Firestore data
+const serializeData = (obj) => {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+
+  if (obj instanceof Date) {
+    return obj.toISOString();
+  }
+
+  if (obj.toDate instanceof Function) {
+    return obj.toDate().toISOString();
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(serializeData);
+  }
+
+  if (typeof obj === 'object') {
+    return Object.keys(obj).reduce((result, key) => {
+      result[key] = serializeData(obj[key]);
+      return result;
+    }, {});
+  }
+
+  return obj;
+};
+
+export const getServerSideProps = async () => {
+  // Fetch all comics and their chapters
+  const querySnapshot = await getDocs(collection(db, "comics"));
+  const comicsData = [];
+  const genreSet = new Set();
+
+  for (const docSnap of querySnapshot.docs) {
+    const comicData = { id: docSnap.id, ...serializeData(docSnap.data()) };
+
+    if (comicData.genres && Array.isArray(comicData.genres)) {
+      comicData.genres.forEach((genre) => genreSet.add(genre));
+    }
+
+    const detailRef = collection(db, "comics", docSnap.id, "detailKomik");
+    const detailSnapshot = await getDocs(detailRef);
+
+    if (!detailSnapshot.empty) {
+      const firstDetail = detailSnapshot.docs[0];
+
+      const chaptersCollection = collection(
+        db,
+        "comics",
+        docSnap.id,
+        "detailKomik",
+        firstDetail.id,
+        "chapters"
+      );
+
+      const chaptersSnapshot = await getDocs(chaptersCollection);
+
+      const latestChapters = chaptersSnapshot.docs
+        .map((doc) => {
+          const data = doc.data();
+          const timestamp = data.timestamp ? {
+            seconds: data.timestamp.seconds || 0,
+            nanoseconds: data.timestamp.nanoseconds || 0
+          } : null;
+          return {
+            id: doc.id,
+            ...serializeData(data),
+            timestamp
+          };
+        })
+        .filter((c) => c.timestamp)
+        .sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0))
+        .slice(0, 3);
+
+      if (latestChapters.length > 0) {
+        comicsData.push({
+          ...comicData,
+          latestChapters,
+          latestUpdate: latestChapters[0]?.timestamp?.seconds || 0
+        });
+      } else {
+        comicsData.push({
+          ...comicData,
+          latestChapters: [],
+          latestUpdate: 0
+        });
+      }
+    } else {
+      comicsData.push({
+        ...comicData,
+        latestChapters: [],
+        latestUpdate: 0
+      });
+    }
+  }
+
+  // Sort comics by latest chapter update
+  const sortedComics = comicsData.sort((a, b) => (b.latestUpdate || 0) - (a.latestUpdate || 0));
+  const initialComics = sortedComics.slice(0, 10);
+  const initialGenres = Array.from(genreSet);
+
+  // Fetch popular comics (initially weekly)
+  const q = query(
+    collection(db, "comics"),
+    orderBy("weeklyViews", "desc"),
+    limit(10)
+  );
+
+  const popularSnapshot = await getDocs(q);
+  const initialPopularComics = popularSnapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...serializeData(doc.data() || {}),
+  }));
+
+  // Serialize all data before returning
+  return {
+    props: {
+      initialComics: serializeData(initialComics),
+      initialGenres: Array.from(initialGenres),
+      initialPopularComics: serializeData(initialPopularComics),
+    },
+  };
+};
+
+export default function Home({ initialComics, initialGenres, initialPopularComics }) {
+  const [comics, setComics] = useState(initialComics);
+  const [genres, setGenres] = useState(initialGenres);
+  const [popularComics, setPopularComics] = useState(initialPopularComics);
   const [viewType, setViewType] = useState("weekly");
   const [activeIndex, setActiveIndex] = useState(0);
-  const [isScrolled, setIsScrolled] = useState(false);
   const carouselRef = useRef(null);
 
-  // Auto-scroll carousel setiap 3 detik
+  // Auto-scroll carousel every 3 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       nextSlide();
@@ -72,78 +192,7 @@ export default function Home() {
     return num.toString();
   };
 
-  // 🔽 Fetch semua komik + 3 chapter terbaru
-  useEffect(() => {
-    const fetchAllComics = async () => {
-      const querySnapshot = await getDocs(collection(db, "comics"));
-      const comicsData = [];
-      const genreSet = new Set();
-
-      for (const docSnap of querySnapshot.docs) {
-        const comicData = { id: docSnap.id, ...docSnap.data() };
-
-        if (comicData.genres && Array.isArray(comicData.genres)) {
-          comicData.genres.forEach((genre) => genreSet.add(genre));
-        }
-
-        const detailRef = collection(db, "comics", docSnap.id, "detailKomik");
-        const detailSnapshot = await getDocs(detailRef);
-
-        if (!detailSnapshot.empty) {
-          const firstDetail = detailSnapshot.docs[0];
-
-          const chaptersCollection = collection(
-            db,
-            "comics",
-            docSnap.id,
-            "detailKomik",
-            firstDetail.id,
-            "chapters"
-          );
-
-          const chaptersSnapshot = await getDocs(chaptersCollection);
-
-          const latestChapters = chaptersSnapshot.docs
-            .map((doc) => ({
-              id: doc.id,
-              ...doc.data(),
-            }))
-            .filter((c) => c.timestamp)
-            .sort((a, b) => b.timestamp.seconds - a.timestamp.seconds)
-            .slice(0, 3);
-
-          if (latestChapters.length > 0) {
-            comicsData.push({
-              ...comicData,
-              latestChapters,
-              latestUpdate: latestChapters[0].timestamp.seconds
-            });
-          } else {
-            comicsData.push({
-              ...comicData,
-              latestChapters: [],
-              latestUpdate: 0
-            });
-          }
-        } else {
-          comicsData.push({
-            ...comicData,
-            latestChapters: [],
-            latestUpdate: 0
-          });
-        }
-      }
-
-      // Sort comics by latest chapter update
-      const sortedComics = comicsData.sort((a, b) => b.latestUpdate - a.latestUpdate);
-      setComics(sortedComics.slice(0, 10));
-      setGenres(Array.from(genreSet));
-    };
-
-    fetchAllComics();
-  }, []);
-
-  // 🔥 Fetch Komik Populer
+  // Update popular comics when viewType changes
   useEffect(() => {
     const fetchPopularComics = async () => {
       let orderField = "weeklyViews";
@@ -299,7 +348,7 @@ export default function Home() {
             </h2>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6 mb-8">
-              {comics.map((comic) => (
+              {comics.slice(0, 4).map((comic) => (
                 <div key={comic.id} className="relative bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-purple-900/20 group">
                   <div className="relative pb-[140%]">
                     <Image
@@ -308,14 +357,8 @@ export default function Home() {
                       className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-300"
                       width={240}
                       height={340}
+                      loading="lazy"
                     />
-
-                    {/* Origin Badge */}
-                    {comic.origin && (
-                      <div className="absolute top-2 left-2 bg-pink-500 text-white text-xs px-2 py-1 rounded">
-                        {comic.origin}
-                      </div>
-                    )}
 
                     <button className="absolute top-2 right-2 w-8 h-8 bg-gray-900/70 hover:bg-gray-900 rounded-full flex items-center justify-center text-gray-300 hover:text-purple-400 transition-colors">
                       <Bookmark className="w-4 h-4" />
@@ -453,7 +496,7 @@ export default function Home() {
               background: rgba(255, 255, 255, 0.2);
               border-radius: 10px;
           }
-          .custom-scrollbar::-webkit-scrollbar-thumb:hover {Fa
+          .custom-scrollbar::-webkit-scrollbar-thumb:hover {
               background: rgba(255, 255, 255, 0.3);
           }
         `}</style>
