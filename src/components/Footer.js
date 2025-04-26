@@ -10,6 +10,7 @@ import {
     Github,
     ArrowUp
 } from "lucide-react";
+import Image from "next/image";
 
 const Footer = () => {
     const scrollToTop = () => {
@@ -30,9 +31,9 @@ const Footer = () => {
                         className="space-y-4"
                     >
                         <Link href="/" className="flex items-center gap-2">
-                            <Book className="w-8 h-8 text-purple-500" />
+                            <Image src="/logo.png" alt="Logo" width={40} height={40} />
                             <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                                MangaReader
+                                KomikKuy
                             </span>
                         </Link>
                         <p className="text-gray-300 text-sm">
@@ -102,12 +103,12 @@ const Footer = () => {
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/genres" className="text-gray-300 hover:text-purple-400 transition-colors text-sm">
+                                <Link href="/genre" className="text-gray-300 hover:text-purple-400 transition-colors text-sm">
                                     Genre
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/popular" className="text-gray-300 hover:text-purple-400 transition-colors text-sm">
+                                <Link href="/genre" className="text-gray-300 hover:text-purple-400 transition-colors text-sm">
                                     Populer
                                 </Link>
                             </li>
@@ -168,17 +169,8 @@ const Footer = () => {
                 <div className="mt-12 pt-8 border-t border-gray-700/30">
                     <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                         <p className="text-gray-300 text-sm">
-                            © {new Date().getFullYear()} MangaReader. All rights reserved.
+                            © {new Date().getFullYear()} KomikKuy. All rights reserved.
                         </p>
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={scrollToTop}
-                            className="flex items-center gap-2 text-gray-300 hover:text-purple-400 transition-colors text-sm"
-                        >
-                            <ArrowUp className="w-4 h-4" />
-                            Kembali ke Atas
-                        </motion.button>
                     </div>
                 </div>
             </div>

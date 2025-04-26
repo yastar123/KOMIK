@@ -73,12 +73,10 @@ export default function ChapterDetail({
     `Chapter ${currentIndex !== null ? currentIndex + 1 : ""}`;
   const comicTitle = comicInfo?.title || "";
   const pageTitle = `${chapterTitle} - ${comicTitle} | Read Online Free`;
-  const description = `Read ${comicTitle} ${chapterTitle} online for free. ${
-    comicInfo?.description?.substring(0, 150) || ""
-  }`;
-  const canonicalUrl = `${
-    process.env.NEXT_PUBLIC_SITE_URL || "https://yoursite.com"
-  }/comic/${comicId}/${chapterId}`;
+  const description = `Read ${comicTitle} ${chapterTitle} online for free. ${comicInfo?.description?.substring(0, 150) || ""
+    }`;
+  const canonicalUrl = `${process.env.NEXT_PUBLIC_SITE_URL || "https://yoursite.com"
+    }/comic/${comicId}/${chapterId}`;
 
   // Structured data for SEO
   const structuredData = {
@@ -98,9 +96,8 @@ export default function ChapterDetail({
       name: "Your Comic Website Name",
       logo: {
         "@type": "ImageObject",
-        url: `${
-          process.env.NEXT_PUBLIC_SITE_URL || "https://yoursite.com"
-        }/logo.png`,
+        url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://yoursite.com"
+          }/logo.png`,
       },
     },
     mainEntityOfPage: {
@@ -164,11 +161,10 @@ export default function ChapterDetail({
       <div className="min-h-screen bg-gray-900 text-white">
         {/* Header */}
         <header
-          className={`fixed w-full top-0 z-30 transition-all duration-300 border-b border-gray-800 ${
-            scrolled
+          className={`fixed w-full top-0 z-30 transition-all duration-300 border-b border-gray-800 ${scrolled
               ? "bg-gray-900/95 backdrop-blur-md py-2 shadow-lg"
               : "bg-gray-900/80 backdrop-blur-sm py-3"
-          }`}
+            }`}
         >
           <div className="container mx-auto px-4">
             <div className="flex justify-between items-center">
@@ -279,7 +275,7 @@ export default function ChapterDetail({
             {chapterImages?.map((imageUrl, index) => (
               <div
                 key={index}
-                className="relative bg-gray-800/30 overflow-hidden mb-2"
+                className="relative bg-gray-800/30 overflow-hidden"
               >
                 <Image
                   src={imageUrl}
@@ -344,9 +340,8 @@ export default function ChapterDetail({
                 <Link
                   href={`/comic/${comicId}/${prevChapter.id}`}
                   className="flex items-center gap-2 px-4 py-2 bg-purple-500/90 hover:bg-purple-600/90 rounded-lg transition-colors"
-                  aria-label={`Previous chapter: ${
-                    prevChapter.title || `Chapter ${currentIndex}`
-                  }`}
+                  aria-label={`Previous chapter: ${prevChapter.title || `Chapter ${currentIndex}`
+                    }`}
                   prefetch={true}
                 >
                   <ChevronLeft className="w-5 h-5" />
@@ -365,9 +360,8 @@ export default function ChapterDetail({
                 <Link
                   href={`/comic/${comicId}/${nextChapter.id}`}
                   className="flex items-center gap-2 px-4 py-2 bg-purple-500/90 hover:bg-purple-600/90 rounded-lg transition-colors"
-                  aria-label={`Next chapter: ${
-                    nextChapter.title || `Chapter ${currentIndex + 2}`
-                  }`}
+                  aria-label={`Next chapter: ${nextChapter.title || `Chapter ${currentIndex + 2}`
+                    }`}
                   prefetch={true}
                 >
                   <span>Next</span>

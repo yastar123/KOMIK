@@ -8,6 +8,8 @@ export default function App({ Component, pageProps }) {
     <>
       <Head>
         <meta name="google-site-verification" content="l7Wm9u4AZChkT02kada1sN1bddu9oc2b1ChYD2DLmzI" />
+        <meta name="description" content="Baca komik manga, manhwa, dan manhua terbaru di Komikkuy secara gratis dengan update tiap hari!" />
+        <link rel="icon" href="/favicon.png" />
       </Head>
 
       {/* Google Analytics Script */}
