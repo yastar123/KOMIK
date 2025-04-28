@@ -73,8 +73,7 @@ export default function ChapterDetail({
     `Chapter ${currentIndex !== null ? currentIndex + 1 : ""}`;
   const comicTitle = comicInfo?.title || "";
   const pageTitle = ` Chapter ${chapterTitle} - Komik ${comicTitle} - KomikKuy`;
-  const description = `Komik ${comicTitle} Chapter ${chapterTitle} bahasa Indonesia terbaru, gratis, dan kualitas gambar terbaik. || ""
-    }`;
+  const description = `Komik ${comicTitle} Chapter ${chapterTitle} bahasa Indonesia terbaru, gratis, dan kualitas gambar terbaik`;
   const canonicalUrl = `${process.env.NEXT_PUBLIC_SITE_URL || "https://yoursite.com"
     }/comic/${comicId}/${chapterId}`;
 
